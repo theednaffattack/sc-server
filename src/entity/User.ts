@@ -21,6 +21,10 @@ export class User extends BaseEntity {
   email: string;
 
   @Field()
+  @Column("text", { unique: true })
+  profileImageUri: string;
+
+  @Field()
   name(@Root() parent: User): string {
     return `${parent.firstName} ${parent.lastName}`;
   }
