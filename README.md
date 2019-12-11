@@ -1,6 +1,6 @@
-# Simple Server with TypeGraphQL and TypeOrm
+# Slack Clone
 
-## Stuff
+## Features
 
 - user registration (change password, lock account)
 - multi-device/screen logout
