@@ -15,7 +15,7 @@ export class LogoutResolver {
           return reject(false);
         }
 
-        ctx.res.clearCookie("qid");
+        ctx.res.clearCookie("sci");
 
         return resolve(true);
       });

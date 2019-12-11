@@ -124,7 +124,7 @@ const main = async () => {
   // in non-production environments
   if (nodeEnvIsProd) {
     sessionMiddleware = session({
-      name: "qid",
+      name: "sci",
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
