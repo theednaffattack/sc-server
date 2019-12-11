@@ -1,4 +1,6 @@
-# Slack Clone
+# Slack Clone (server)
+
+Intended to be a server for both web and RN client apps.
 
 ## Features
 
