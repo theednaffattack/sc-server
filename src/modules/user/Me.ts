@@ -11,7 +11,6 @@ export class MeResolver {
   async me(@Ctx() ctx: MyContext): Promise<User | undefined> {
     // if we can't find a userId on the current session
     if (!ctx.req.session!.userId) {
-      console.log("WHAAAAAT", ctx.req.session);
       return undefined;
     }
 
