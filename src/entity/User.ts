@@ -20,8 +20,8 @@ export class User extends BaseEntity {
   @Column("text", { unique: true })
   email: string;
 
-  @Field()
-  @Column("text", { unique: true })
+  @Field({ nullable: true })
+  @Column("text", { unique: true, nullable: true })
   profileImageUri: string;
 
   @Field()
