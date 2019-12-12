@@ -1,5 +1,5 @@
 import { Resolver, Mutation, Ctx } from "type-graphql";
-import { MyContext } from "src/types/MyContext";
+import { MyContext } from "../../types/MyContext";
 
 @Resolver()
 export class LogoutResolver {
@@ -15,7 +15,7 @@ export class LogoutResolver {
           return reject(false);
         }
 
-        ctx.res.clearCookie("sci");
+        ctx.res.clearCookie("scg");
 
         return resolve(true);
       });
