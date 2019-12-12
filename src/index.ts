@@ -6,7 +6,7 @@ import { createConnection } from "typeorm";
 import { GraphQLFormattedError, GraphQLError } from "graphql";
 import session from "express-session";
 import connectRedis from "connect-redis";
-import cors from "cors";
+// import cors from "cors";
 import internalIp from "internal-ip";
 // import logger from "pino";
 
@@ -81,26 +81,37 @@ const main = async () => {
 
   const app = Express.default();
 
-  const whitelist = [
+  const whitelistedOrigins = [
     "http://localhost:3000",
     "http://localhost:4000",
     `http://${homeIp}:3000`,
     `http://${homeIp}:4000`
   ];
 
-  // we're bypassing cors used by apollo-server-express here
-  app.use(
-    cors({
-      credentials: true,
-      origin: function(origin, callback) {
-        if (whitelist.indexOf(origin) !== -1 || !origin) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
+  const corsOptions = {
+    credentials: true,
+    origin: function(origin: any, callback: any) {
+      if (!origin || whitelistedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.error("cors error:: origin: ", origin);
       }
-    })
-  );
+    }
+  };
+
+  // // we're bypassing cors used by apollo-server-express here
+  // app.use(
+  //   cors({
+  //     credentials: true,
+  //     origin: function(origin, callback) {
+  //       if (whitelistedOrigins.indexOf(origin) !== -1 || !origin) {
+  //         callback(null, true);
+  //       } else {
+  //         callback(new Error("Not allowed by CORS"));
+  //       }
+  //     }
+  //   })
+  // );
 
   // needed to remove domain from our cookie
   // in non-production environments
@@ -142,7 +153,7 @@ const main = async () => {
 
   app.use(sessionMiddleware);
 
-  apolloServer.applyMiddleware({ app, cors: false });
+  apolloServer.applyMiddleware({ app, cors: corsOptions });
 
   app.listen(4000, () => {
     console.log(
