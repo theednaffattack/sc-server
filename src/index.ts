@@ -102,29 +102,11 @@ const main = async () => {
     })
   );
 
-  // app.use(
-  //   session({
-  //     name: "qid",
-  //     secret: process.env.SESSION_SECRET as string,
-  //     store: new RedisStore({
-  //       client: redis as any,
-  //       prefix: redisSessionPrefix
-  //     }),
-  //     resave: false,
-  //     saveUninitialized: false,
-  //     cookie: {
-  //       httpOnly: true,
-  //       secure: process.env.NODE_ENV === "production",
-  //       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
-  //     }
-  //   })
-  // );
-
   // needed to remove domain from our cookie
   // in non-production environments
   if (nodeEnvIsProd) {
     sessionMiddleware = session({
-      name: "sci",
+      name: "scg",
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
@@ -141,7 +123,7 @@ const main = async () => {
     });
   } else {
     sessionMiddleware = session({
-      name: "qid",
+      name: "scg",
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
@@ -151,7 +133,7 @@ const main = async () => {
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        secure: true,
+        // secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
         domain: `${homeIp}`
       }
