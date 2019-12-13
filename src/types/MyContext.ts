@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { GraphQLResolveInfo, GraphQLArgs } from "graphql";
+import { User } from "src/entity/User";
 
 interface GraphQlInputs {
   args: GraphQLArgs;
@@ -7,6 +8,7 @@ interface GraphQlInputs {
 }
 
 export interface MyContext {
+  userId: User["id"];
   gqlOpts: GraphQlInputs;
   req: Request;
   res: Response;
