@@ -12,14 +12,17 @@ import {
   CreateProductResolver
 } from "../modules/user/CreateUser";
 import { ProfilePictureResolver } from "../modules/user/ProfilePictureUpload";
+import { EditUserInfoResolver } from "../modules/user/edit-user-info";
 
 export const createSchema = () =>
   buildSchema({
+    // alphabetical please!
     resolvers: [
       ChangePasswordResolver,
       ConfirmUserResolver,
       CreateProductResolver,
       CreateUserResolver,
+      EditUserInfoResolver,
       ForgotPasswordResolver,
       LoginResolver,
       LogoutResolver,
