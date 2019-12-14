@@ -3,7 +3,9 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToMany
+  OneToMany,
+  JoinTable,
+  ManyToMany
 } from "typeorm";
 import { Field, ID, ObjectType, Root } from "type-graphql";
 import { Message } from "./Message";
@@ -35,6 +37,26 @@ export class User extends BaseEntity {
     { nullable: true }
   )
   images: Image[];
+
+  @Field(() => [Message])
+  mappedMessages: Message[];
+
+  @Field(() => [User], { nullable: "itemsAndList" })
+  @ManyToMany(
+    () => User,
+    user => user.following,
+    { nullable: true }
+  )
+  @JoinTable()
+  followers: User[];
+
+  @Field(() => [User], { nullable: "itemsAndList" })
+  @ManyToMany(
+    () => User,
+    user => user.followers,
+    { nullable: true }
+  )
+  following: User[];
 
   @Field({ nullable: true })
   @Column("text", { unique: true, nullable: true })
