@@ -1,8 +1,10 @@
-import { Resolver, Mutation, Ctx } from "type-graphql";
+import { Resolver, Mutation, Ctx, UseMiddleware } from "type-graphql";
 import { MyContext } from "../../types/MyContext";
+import { loggerMiddleware } from "../middleware/logger";
 
 @Resolver()
 export class LogoutResolver {
+  @UseMiddleware(loggerMiddleware)
   @Mutation(() => Boolean)
   async logout(
     @Ctx()
@@ -14,7 +16,6 @@ export class LogoutResolver {
           console.error(err);
           return reject(false);
         }
-
         ctx.res.clearCookie("scg");
 
         return resolve(true);
