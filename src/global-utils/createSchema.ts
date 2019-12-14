@@ -13,6 +13,10 @@ import {
 } from "../modules/user/CreateUser";
 import { ProfilePictureResolver } from "../modules/user/ProfilePictureUpload";
 import { EditUserInfoResolver } from "../modules/user/edit-user-info";
+import { SignS3 } from "../modules/aws-s3/s3-sign-mutation";
+import { GetAllMessagesResolver } from "../modules/messages/get-all-my-messages";
+import { GetListToCreateThread } from "../modules/messages/get-list-to-create-thread";
+import { GetMyMessagesFromUserResolver } from "../modules/messages/get-my-messages-from-user";
 
 export const createSchema = () =>
   buildSchema({
@@ -24,11 +28,15 @@ export const createSchema = () =>
       CreateUserResolver,
       EditUserInfoResolver,
       ForgotPasswordResolver,
+      GetAllMessagesResolver,
+      GetListToCreateThread,
+      GetMyMessagesFromUserResolver,
       LoginResolver,
       LogoutResolver,
       MeResolver,
       ProfilePictureResolver,
-      RegisterResolver
+      RegisterResolver,
+      SignS3
     ],
     authChecker: ({ context: { req } }) => {
       // I can read context here
