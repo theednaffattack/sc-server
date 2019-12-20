@@ -156,10 +156,10 @@ const main = async () => {
   apolloServer.applyMiddleware({ app, cors: corsOptions });
 
   app.listen(4000, () => {
-    console.log(
-      `server started! GraphQL Playground available at:\nhttp://localhost:4000/graphql\n
-      on LAN at: http://${homeIp}:4000/graphql`
-    );
+    console.log(`\n
+      server started! GraphQL Playground available at:\n
+      localhost: http://localhost:4000/graphql\n
+      on LAN at: http://${homeIp}:4000/graphql`);
   });
 };
 
