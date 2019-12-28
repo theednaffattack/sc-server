@@ -1,6 +1,7 @@
 import { buildSchema } from "type-graphql";
 
-import { ChangePasswordResolver } from "../modules/user/ChangePassword";
+import { ChangePasswordFromContextUseridResolver } from "../modules/user/ChangePasswordFromContextUserid";
+import { ChangePasswordFromTokenResolver } from "../modules/user/ChangePasswordFromToken";
 import { ConfirmUserResolver } from "../modules/user/ConfirmUser";
 import { ForgotPasswordResolver } from "../modules/user/ForgotPassword";
 import { LoginResolver } from "../modules/user/Login";
@@ -22,7 +23,8 @@ export const createSchema = () =>
   buildSchema({
     // alphabetical please!
     resolvers: [
-      ChangePasswordResolver,
+      ChangePasswordFromContextUseridResolver,
+      ChangePasswordFromTokenResolver,
       ConfirmUserResolver,
       CreateProductResolver,
       CreateUserResolver,
