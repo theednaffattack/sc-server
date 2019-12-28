@@ -8,11 +8,21 @@ import session from "express-session";
 import connectRedis from "connect-redis";
 // import cors from "cors";
 import internalIp from "internal-ip";
+import colors from "colors/safe";
+import http from "http";
+
 // import logger from "pino";
 
 import { redis } from "./redis";
 import { redisSessionPrefix } from "./constants";
 import { createSchema } from "./global-utils/createSchema";
+import { devOrmconfig } from "./config/dev-orm-config";
+import { productionOrmConfig } from "./config/prod-orm-config";
+
+interface CorsOptionsProps {
+  credentials: boolean;
+  origin: (origin: any, callback: any) => void;
+}
 
 const RedisStore = connectRedis(session);
 
@@ -22,16 +32,50 @@ let sessionMiddleware: Express.RequestHandler;
 // const nodeEnvIs_NOT_Prod = process.env.NODE_ENV !== "production";
 const nodeEnvIsProd = process.env.NODE_ENV === "production";
 
+const ormConnection = nodeEnvIsProd ? productionOrmConfig : devOrmconfig;
+
+const getContextFromHttpRequest = async (req: any, res: any) => {
+  if (req && req.session) {
+    const { userId } = req.session;
+    return { userId, req, res };
+  }
+  return ["No session detected"];
+};
+
+const getContextFromSubscription = (connection: any) => {
+  const { userId } = connection.context.req.session;
+  return { userId, req: connection.context.req };
+};
+
 const main = async () => {
-  await createConnection();
+  await createConnection(ormConnection);
 
   const schema = await createSchema();
 
   const apolloServer = new ApolloServer({
     schema,
     playground: { version: "1.7.25", endpoint: "/graphql" },
-    context: ({ req, res }: any) => ({ req, res }),
-    // custom error handling from: https://github.com/19majkel94/type-graphql/issues/258
+    context: ({ req, res, connection }: any) => {
+      if (connection) {
+        return getContextFromSubscription(connection);
+      }
+
+      return getContextFromHttpRequest(req, res);
+
+      // return { req, res, connection }
+    },
+    subscriptions: {
+      path: "/subscriptions",
+      onConnect: (_, ws: any) => {
+        return new Promise(res =>
+          sessionMiddleware(ws.upgradeReq, {} as any, () => {
+            res({ req: ws.upgradeReq });
+          })
+        );
+      }
+    },
+    // custom error handling from:
+    // https://github.com/19majkel94/type-graphql/issues/258
     formatError: (error: GraphQLError): GraphQLFormattedError => {
       if (error.originalError instanceof ApolloError) {
         return error;
@@ -81,14 +125,16 @@ const main = async () => {
 
   const app = Express.default();
 
-  const whitelistedOrigins = [
-    "http://localhost:3000",
-    "http://localhost:4000",
-    `http://${homeIp}:3000`,
-    `http://${homeIp}:4000`
-  ];
+  const whitelistedOrigins = nodeEnvIsProd
+    ? [`${process.env.PRODUCTION_ORIGIN}`, `${process.env.GRAPHQL_ENDPOINT}`]
+    : [
+        "http://localhost:3000",
+        "http://localhost:4000",
+        `http://${homeIp}:3000`,
+        `http://${homeIp}:4000`
+      ];
 
-  const corsOptions = {
+  const corsOptions: CorsOptionsProps = {
     credentials: true,
     origin: function(origin: any, callback: any) {
       if (!origin || whitelistedOrigins.indexOf(origin) !== -1) {
@@ -155,11 +201,44 @@ const main = async () => {
 
   apolloServer.applyMiddleware({ app, cors: corsOptions });
 
-  app.listen(4000, () => {
-    console.log(`\n
-      server started! GraphQL Playground available at:\n
-      localhost: http://localhost:4000/graphql\n
-      on LAN at: http://${homeIp}:4000/graphql`);
+  let httpServer = http.createServer(app);
+  apolloServer.installSubscriptionHandlers(httpServer);
+
+  // needed for heroku deployment
+  app.enable("trust proxy");
+
+  // needed for heroku deployment
+  // they set the "x-forwarded-proto" header???
+  if (nodeEnvIsProd) {
+    app.use(function(req, res, next) {
+      if (req.header("x-forwarded-proto") !== "https") {
+        res.redirect("https://" + req.header("host") + req.url);
+      } else {
+        next();
+      }
+    });
+  }
+
+  httpServer.listen(4000, () => {
+    console.log(`
+
+${colors.bgYellow(colors.black("    server started    "))}
+
+GraphQL Playground available at:
+    ${colors.green("localhost")}: http://localhost:4000${
+      apolloServer.graphqlPath
+    }
+          ${colors.green("LAN")}: http://${homeIp}:4000${
+      apolloServer.graphqlPath
+    }
+
+WebSocket subscriptions available at:
+${colors.green("slack_clone server")}: ws://${homeIp}:4000${
+      apolloServer.subscriptionsPath
+    }
+
+
+`);
   });
 };
 
