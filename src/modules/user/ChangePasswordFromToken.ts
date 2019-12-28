@@ -10,17 +10,18 @@ import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
 
 @Resolver()
-export class ChangePasswordResolver {
+export class ChangePasswordFromTokenResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
   @Mutation(() => User, { nullable: true })
-  async changePassword(
+  async changePasswordFromToken(
     @Arg("data")
     { token, password }: ChangePasswordInput,
     @Ctx() ctx: MyContext
   ): Promise<User | null> {
+    console.log("VIEW TOKEN", token);
+    // console.log("VIEW USERID", userId);
+
     const userId = await redis.get(forgotPasswordPrefix + token);
-    console.log(token);
-    console.log(userId);
     // token expired in redis, possibly bad token
     if (!userId) {
       return null;
