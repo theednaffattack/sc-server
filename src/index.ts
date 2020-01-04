@@ -6,18 +6,16 @@ import { createConnection } from "typeorm";
 import { GraphQLFormattedError, GraphQLError } from "graphql";
 import session from "express-session";
 import connectRedis from "connect-redis";
-// import cors from "cors";
 import internalIp from "internal-ip";
 import colors from "colors/safe";
 import http from "http";
-
-// import logger from "pino";
 
 import { redis } from "./redis";
 import { redisSessionPrefix } from "./constants";
 import { createSchema } from "./global-utils/createSchema";
 import { devOrmconfig } from "./config/dev-orm-config";
 import { productionOrmConfig } from "./config/prod-orm-config";
+// import { createUsersLoader } from "./modules/utils/data-loaders/batch-user-loader";
 
 interface CorsOptionsProps {
   credentials: boolean;
@@ -58,9 +56,18 @@ const main = async () => {
     context: ({ req, res, connection }: any) => {
       if (connection) {
         return getContextFromSubscription(connection);
+        // return {
+        //   ...getContextFromSubscription(connection),
+        //   usersLoader: createUsersLoader()
+        // };
       }
 
       return getContextFromHttpRequest(req, res);
+
+      // return {
+      //   ...getContextFromHttpRequest(req, res),
+      //   usersLoader: createUsersLoader()
+      // };
 
       // return { req, res, connection }
     },

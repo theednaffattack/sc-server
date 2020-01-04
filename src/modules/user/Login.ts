@@ -1,11 +1,13 @@
-import { Arg, Resolver, Mutation, Ctx } from "type-graphql";
+import { Arg, Resolver, Mutation, Ctx, UseMiddleware } from "type-graphql";
 import bcrypt from "bcryptjs";
 
 import { User } from "../../entity/User";
 import { MyContext } from "../../types/MyContext";
+import { loggerMiddleware } from "../middleware/logger";
 
 @Resolver()
 export class LoginResolver {
+  @UseMiddleware(loggerMiddleware)
   @Mutation(() => User, { nullable: true })
   async login(
     @Arg("email") email: string,
@@ -18,7 +20,7 @@ export class LoginResolver {
       return null;
     }
 
-    const valid = bcrypt.compare(password, user.password);
+    const valid = await bcrypt.compare(password, user.password);
 
     // if the supplied password is invalid return early
     if (!valid) {

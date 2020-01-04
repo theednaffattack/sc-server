@@ -1,7 +1,7 @@
-import { testConn } from "../../../test-utils/testConn";
 import { Connection } from "typeorm";
 import casual from "casual";
 
+import { testConn } from "../../../test-utils/testConn";
 import { gCall } from "../../../test-utils/gCall";
 import { User } from "../../../entity/User";
 

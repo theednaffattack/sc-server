@@ -18,13 +18,18 @@ import { SignS3 } from "../modules/aws-s3/s3-sign-mutation";
 import { GetAllMessagesResolver } from "../modules/messages/get-all-my-messages";
 import { GetListToCreateThread } from "../modules/messages/get-list-to-create-thread";
 import { GetMyMessagesFromUserResolver } from "../modules/messages/get-my-messages-from-user";
+import { UserTeamResolver } from "../modules/team/team-resolver";
+import { ChannelResolver } from "../modules/channel/channel-resolver";
+// import { AddMessageToChannelResolver } from "../modules/channel/add-message-to-channel";
 
 export const createSchema = () =>
   buildSchema({
     // alphabetical please!
     resolvers: [
+      // AddMessageToChannelResolver,
       ChangePasswordFromContextUseridResolver,
       ChangePasswordFromTokenResolver,
+      ChannelResolver,
       ConfirmUserResolver,
       CreateProductResolver,
       CreateUserResolver,
@@ -38,7 +43,8 @@ export const createSchema = () =>
       MeResolver,
       ProfilePictureResolver,
       RegisterResolver,
-      SignS3
+      SignS3,
+      UserTeamResolver
     ],
     authChecker: ({ context: { req } }) => {
       // I can read context here

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { GraphQLResolveInfo, GraphQLArgs } from "graphql";
-import { User } from "src/entity/User";
+import { User } from "../entity/User";
+// import DataLoader = require("dataloader");
 
 interface GraphQlInputs {
   args: GraphQLArgs;
@@ -13,4 +14,5 @@ export interface MyContext {
   req: Request;
   res: Response;
   next: NextFunction;
+  usersLoader: any;
 }

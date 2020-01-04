@@ -12,6 +12,8 @@ import {
 
 import { User } from "./User";
 import { Image } from "./Image";
+import { Channel } from "./Channel";
+import { Thread } from "./Thread";
 
 export interface MessagePayload {
   id: number;
@@ -67,10 +69,17 @@ export class Message extends BaseEntity {
   )
   user: User;
 
-  // @Field(() => Thread, { nullable: true })
-  // @ManyToOne(
-  //   () => Thread,
-  //   thread => thread.messages
-  // )
-  // thread: Thread;
+  @Field(() => Channel, { nullable: true })
+  @ManyToOne(
+    () => Channel,
+    channel => channel.messages
+  )
+  channel: Channel;
+
+  @Field(() => Thread, { nullable: true })
+  @ManyToOne(
+    () => Thread,
+    thread => thread.messages
+  )
+  thread: Thread;
 }

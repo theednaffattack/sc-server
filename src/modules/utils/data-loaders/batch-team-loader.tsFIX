@@ -1,0 +1,46 @@
+import Dataloader from "dataloader";
+// import { In } from "typeorm";
+
+import { Team } from "../../../entity/Team";
+import { UserTeam } from "../../../entity/UserTeam";
+
+const batchMembers = async (userIds: string[]) => {
+  const userTeams = await Team.createQueryBuilder("team")
+    .leftJoinAndSelect("userTeam.member", "member")
+    .where("member.teamId IN (:...userIds)", { userIds })
+    .getMany();
+
+  // const userTeams = await UserTeam.find({
+  //   join: {
+  //     alias: "userTeam",
+  //     innerJoinAndSelect: {
+  //       user: "userTeam.member"
+  //     }
+  //   },
+  //   where: {
+  //     teamId: In(userIds)
+  //   }
+  // });
+
+  const teamIdToMembers: { [key: string]: User[] } = {};
+
+  // Example:
+  // {
+  //   userId: "sdkfjsajfkajf",
+  //   teamId: "sdfjdisjfi9if9sdfv",
+  //   __member__: {id: "lskdfjdskf", name: "member1"}
+  // }
+
+  userTeams.forEach(ut => {
+    if (ut.teamId in teamIdToMembers) {
+      teamIdToMembers[ut.teamId].push((ut as any).__member__);
+    } else {
+      teamIdToMembers[ut.teamId] = [(ut as any).__member__];
+    }
+  });
+
+  return userIds.map(userId => teamIdToMembers[userId]);
+};
+
+// @ts-ignore
+export const createUsersLoader = () => new Dataloader(batchUsers);
