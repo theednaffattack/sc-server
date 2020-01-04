@@ -2,25 +2,44 @@
 
 http://www.postgresqltutorial.com/
 
-## psql commands
+## PSQL COMMON COMMANDS
 
-\du show all users
+### open psql
 
-\q exit
+command: psql
 
-\dx show installed extensions
+### show all users
 
-\df describe functions
+command: \du
 
-\dt show tables
+### exit
 
-LOGIN COMMANDS
+command: \q
 
-psql -d mydb -U myuser
-psql -h myhost -d mydb -U myuser
+### show installed extensions
 
+command: \dx
+
+### describe functions
+
+command: \df
+
+### show tables
+
+command: \dt
+
+### create extension
+
+**HINT: Must be superuser to create this extension.(below)**
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-DROP TABLE <table name> CASCADE
+### drop table
+
+DROP TABLE [table name] CASCADE
 example:
 DROP TABLE product CASCADE
+
+## LOGIN COMMANDS
+
+psql -d [mydb] -U [myuser]
+psql -h [myhost] -d [mydb] -U [myuser]
