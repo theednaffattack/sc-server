@@ -195,7 +195,7 @@ export class ChannelResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
   @Mutation(() => Boolean)
   async addChannelMember(
-    @Arg("userId", () => String) userId: string,
+    @Arg("userId", () => ID) userId: string,
     @Arg("channelId", () => String) channelId: string
   ) {
     const getUser = await User.createQueryBuilder("user")
@@ -236,7 +236,7 @@ export class ChannelResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
   @Mutation(() => Boolean)
   async removeChannelMember(
-    @Arg("userId", () => String) userId: string,
+    @Arg("userId", () => ID) userId: string,
     @Arg("channelId", () => String) channelId: string
   ): Promise<Boolean> {
     const getUser = await User.createQueryBuilder("user")
@@ -299,7 +299,7 @@ export class ChannelResolver {
 
   @UseMiddleware(isAuth, loggerMiddleware)
   @Query(() => [User])
-  async getChannelMembers(
+  async getAllChannelMembers(
     @Arg("channelId", () => String) channelId: string
   ): Promise<User[]> {
     const getMessages = await Channel.createQueryBuilder("channel")
@@ -312,7 +312,7 @@ export class ChannelResolver {
 
   @UseMiddleware(isAuth, loggerMiddleware)
   @Query(() => [Message])
-  async getChannelMessages(
+  async getAllChannelMessages(
     @Arg("channelId", () => String, { nullable: true }) channelId: string
   ): Promise<Message[]> {
     const getMessages = await Channel.createQueryBuilder("channel")
