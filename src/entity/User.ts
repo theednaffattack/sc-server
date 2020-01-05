@@ -5,7 +5,8 @@ import {
   Column,
   OneToMany,
   JoinTable,
-  ManyToMany
+  ManyToMany,
+  ManyToOne
 } from "typeorm";
 import { Field, ID, ObjectType, Root } from "type-graphql";
 import { Message } from "./Message";
@@ -57,6 +58,14 @@ export class User extends BaseEntity {
     default: UserTeamRole.MEMBER
   })
   teamRole: UserTeamRole;
+
+  @Field(() => Channel, { nullable: true })
+  @ManyToOne(
+    () => Channel,
+    channel => channel.created_by,
+    { nullable: true }
+  )
+  channels_created?: Channel;
 
   // () => User,
   // user => user.followers,

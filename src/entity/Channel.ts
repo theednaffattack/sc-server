@@ -64,6 +64,14 @@ export class Channel extends BaseEntity {
   )
   invitees: User[];
 
+  @Field(() => User, { nullable: false })
+  @OneToMany(
+    () => User,
+    user => user.channels_created,
+    { nullable: false }
+  )
+  created_by: User;
+
   @Field(() => Date, { nullable: true })
   @CreateDateColumn({ type: "timestamp" })
   created_at: Date;
