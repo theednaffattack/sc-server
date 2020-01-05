@@ -5,7 +5,8 @@ import {
   Arg,
   ID,
   UseMiddleware,
-  Ctx
+  Ctx,
+  Authorized
 } from "type-graphql";
 import { User } from "../../entity/User";
 import { Team } from "../../entity/Team";
@@ -24,6 +25,7 @@ import { MyContext } from "src/types/MyContext";
 @Resolver()
 export class UserTeamResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER")
   @Mutation(() => Boolean)
   async addTeamMember(
     @Arg("userId", () => String) userId: string,
@@ -48,6 +50,7 @@ export class UserTeamResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER")
   @Mutation(() => Team)
   async createTeam(@Arg("name", () => String) name: string) {
     const { raw } = await Team.createQueryBuilder("team")

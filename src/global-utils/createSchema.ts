@@ -1,5 +1,7 @@
 import { buildSchema } from "type-graphql";
 
+import { customAuthChecker } from "../modules/utils/custom-auth-checker";
+
 import { ChangePasswordFromContextUseridResolver } from "../modules/user/ChangePasswordFromContextUserid";
 import { ChangePasswordFromTokenResolver } from "../modules/user/ChangePasswordFromToken";
 import { ConfirmUserResolver } from "../modules/user/ConfirmUser";
@@ -46,10 +48,11 @@ export const createSchema = () =>
       SignS3,
       UserTeamResolver
     ],
-    authChecker: ({ context: { req } }) => {
-      // I can read context here
-      // cehck permission vs what's in the db "roles" argument
-      // that comes from `@Authorized`, eg,. ["ADMIN", "MODERATOR"]
-      return !!req.session.userId;
-    }
+    authChecker: customAuthChecker
+    // ({ context: { req } }) => {
+    //   // I can read context here
+    //   // check permission vs what's in the db "roles" argument
+    //   // that comes from `@Authorized`, eg,. ["ADMIN", "MODERATOR"]
+    //   return !!req.session.userId;
+    // }
   });
