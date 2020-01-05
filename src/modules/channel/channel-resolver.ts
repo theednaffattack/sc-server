@@ -5,7 +5,8 @@ import {
   Arg,
   ID,
   UseMiddleware,
-  Ctx
+  Ctx,
+  Authorized
 } from "type-graphql";
 
 import { User } from "../../entity/User";
@@ -33,6 +34,7 @@ export interface AddChannelPayloadType {
 @Resolver()
 export class ChannelResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => AddMessagePayload)
   async addMessageToChannel(
     @Ctx() { userId }: MyContext,
@@ -193,6 +195,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Boolean)
   async addChannelMember(
     @Arg("userId", () => ID) userId: string,
@@ -234,6 +237,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Boolean)
   async removeChannelMember(
     @Arg("userId", () => ID) userId: string,
@@ -275,14 +279,16 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Channel)
   async createChannel(
     @Arg("name", () => String) name: string
+    // @Ctx() { userId }: MyContext
   ): Promise<Channel | undefined> {
     const { raw } = await Channel.createQueryBuilder("channel")
       .insert()
       .into("channel")
-      .values({ name })
+      .values({ name }) // , created_by: userId
       .execute();
 
     if (raw) {
@@ -298,6 +304,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Query(() => [User])
   async getAllChannelMembers(
     @Arg("channelId", () => String) channelId: string
@@ -311,6 +318,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Query(() => [Message])
   async getAllChannelMessages(
     @Arg("channelId", () => String, { nullable: true }) channelId: string
@@ -344,6 +352,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Boolean)
   async updateChannelName(
     @Arg("name", () => String) name: string,
@@ -365,6 +374,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Boolean)
   async deleteChannel(
     @Arg("channelName", () => String) channelName: string,
