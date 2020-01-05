@@ -16,9 +16,10 @@ import { Thread } from "./Thread";
 // import { Channel } from "./Channel";
 
 export enum UserTeamRole {
-  ADMIN = "admin",
-  OWNER = "owner",
-  MEMBER = "member"
+  ADMIN = "ADMIN",
+  OWNER = "OWNER",
+  MEMBER = "MEMBER",
+  PUBLIC_GUEST = "PUBLIC_GUEST"
 }
 
 import { registerEnumType } from "type-graphql";
@@ -27,7 +28,7 @@ import { Channel } from "./Channel";
 
 registerEnumType(UserTeamRole, {
   name: "UserTeamRole", // this one is mandatory
-  description: "admin | owner | member" // this one is optional
+  description: "admin | owner | member | public guest" // this one is optional
 });
 
 @ObjectType()
