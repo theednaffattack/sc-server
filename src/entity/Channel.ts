@@ -8,7 +8,8 @@ import {
   UpdateDateColumn,
   // ManyToMany,
   Column,
-  ManyToMany
+  ManyToMany,
+  ManyToOne
 } from "typeorm";
 import { Field, ID, ObjectType, Int } from "type-graphql";
 
@@ -25,7 +26,7 @@ export class Channel extends BaseEntity {
   id: string;
 
   @Field()
-  @Column({ nullable: false })
+  @Column({ nullable: false, unique: true })
   name: string;
 
   @Field(() => [Message], { nullable: "itemsAndList" })
@@ -50,14 +51,21 @@ export class Channel extends BaseEntity {
   @Column({ default: false })
   public?: boolean;
 
-  @Field()
-  @OneToMany(
+  // @Field()
+  // @OneToMany(
+  //   () => Team,
+  //   team => team.channels
+  // )
+  // team: Team;
+
+  @Field(() => Team, { nullable: false })
+  @ManyToOne(
     () => Team,
     team => team.channels
   )
-  team: Team;
+  team: [Channel];
 
-  @Field(() => [User], { nullable: false })
+  @Field(() => [User], { nullable: "itemsAndList" })
   @ManyToMany(
     () => User,
     user => user.channel_memberships
