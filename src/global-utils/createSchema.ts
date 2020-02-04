@@ -1,5 +1,7 @@
 import { buildSchema } from "type-graphql";
 
+import { pubsub } from "../global-utils/redis-config";
+
 import { customAuthChecker } from "../modules/utils/custom-auth-checker";
 
 import { ChangePasswordFromContextUseridResolver } from "../modules/user/ChangePasswordFromContextUserid";
@@ -17,12 +19,15 @@ import {
 import { ProfilePictureResolver } from "../modules/user/ProfilePictureUpload";
 import { EditUserInfoResolver } from "../modules/user/edit-user-info";
 import { SignS3 } from "../modules/aws-s3/s3-sign-mutation";
-import { GetAllMessagesResolver } from "../modules/messages/get-all-my-messages";
-import { GetListToCreateThread } from "../modules/messages/get-list-to-create-thread";
-import { GetMyMessagesFromUserResolver } from "../modules/messages/get-my-messages-from-user";
+import { GetAllMessagesResolver } from "../modules/direct-messages/get-all-my-messages";
+import { GetListToCreateThread } from "../modules/direct-messages/get-list-to-create-thread";
+import { GetMyMessagesFromUserResolver } from "../modules/direct-messages/get-my-messages-from-user";
 import { UserTeamResolver } from "../modules/team/team-resolver";
 import { ChannelResolver } from "../modules/channel/channel-resolver";
+import { DirectMessageResolver } from "../modules/direct-messages/direct-messages-resolver";
 // import { AddMessageToChannelResolver } from "../modules/channel/add-message-to-channel";
+
+// const pubsub = new RedisPubSub();
 
 export const createSchema = () =>
   buildSchema({
@@ -35,6 +40,7 @@ export const createSchema = () =>
       ConfirmUserResolver,
       CreateProductResolver,
       CreateUserResolver,
+      DirectMessageResolver,
       EditUserInfoResolver,
       ForgotPasswordResolver,
       GetAllMessagesResolver,
@@ -48,6 +54,7 @@ export const createSchema = () =>
       SignS3,
       UserTeamResolver
     ],
+    pubSub: pubsub,
     authChecker: customAuthChecker
     // ({ context: { req } }) => {
     //   // I can read context here

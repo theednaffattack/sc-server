@@ -6,7 +6,11 @@ import {
   ID,
   UseMiddleware,
   Ctx,
-  Authorized
+  Authorized,
+  Subscription,
+  Root,
+  PubSub,
+  Publisher
 } from "type-graphql";
 
 import { User } from "../../entity/User";
@@ -19,6 +23,13 @@ import { Message } from "../../entity/Message";
 import { AddMessageToChannelInput } from "./add-message-to-channel-input";
 import { Image } from "../../entity/Image";
 import { AddMessagePayload } from "./add-message-payload";
+import { Team } from "../../entity/Team";
+import { AddChannelInput } from "./add-channel-input";
+
+enum Topic {
+  NewChannelMessage = "NEW_CHANNEL_MESSAGE",
+  NewRecipe = "NEW_RECIPE"
+}
 
 // ADDITIONAL RESOLVERS NEEDED:
 // Remove channel member
@@ -33,20 +44,59 @@ export interface AddChannelPayloadType {
 
 @Resolver()
 export class ChannelResolver {
+  @Subscription(() => Message, {
+    topics: [Topic.NewChannelMessage],
+    filter: () => {
+      return true;
+    }
+  })
+  newMessageSub(@Root() messagePayload: AddMessagePayload): Message {
+    console.log("MESSAGE PAYLOAD", { messagePayload });
+
+    // let returnObj = {
+    //   id: messagePayload.message.id,
+    //   message: messagePayload.message.message,
+    //   sentBy: messagePayload.user,
+    //   __typename: "Message"
+    // };
+
+    return messagePayload.message;
+  }
+
+  @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
+  @Query(() => String)
+  async getChannelName(
+    @Arg("channelId", () => String) channelId: string
+  ): Promise<string> {
+    const findChannel = await Channel.createQueryBuilder("channel")
+      .where("channel.id = :id", { id: channelId })
+      .getOne();
+
+    return findChannel?.name ?? "no name found";
+  }
+
   @UseMiddleware(isAuth, loggerMiddleware)
   @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => AddMessagePayload)
   async addMessageToChannel(
     @Ctx() { userId }: MyContext,
     @Arg("data", () => AddMessageToChannelInput)
-    { channelId, images, invitees, message, sentTo }: AddMessageToChannelInput
+    { channelId, images, message }: AddMessageToChannelInput,
+    @PubSub(Topic.NewChannelMessage) publish: Publisher<AddMessagePayload>
   ): Promise<AddMessagePayload> {
+    console.log("1 - TOP OF RESOLVER (ADD MESSAGE TO CHANNEL)", {
+      userId,
+      channelId,
+      message
+    });
+
     const sentBy = await User.createQueryBuilder("user")
       .where("user.id = :id", { id: userId })
       .getOne();
 
     const receiver = await User.createQueryBuilder("user")
-      .where("user.id = :id", { id: sentTo })
+      .where("user.id = :id", { id: userId })
       .getOne();
 
     let existingChannel;
@@ -54,6 +104,18 @@ export class ChannelResolver {
 
     // if we know the addresser and addressee AND images ARE present...
     if (sentBy && receiver && images && images[0]) {
+      console.log(
+        "\n\n2a - TOP OF IF STAEMENT IN RESOLVER (ADD MESSAGE TO CHANNEL)",
+        {
+          userId,
+          channelId,
+          message,
+          sentBy,
+          receiver,
+          images
+        }
+      );
+      console.log("\n\n");
       const newImageData: Image[] = images.map(image =>
         Image.create({
           uri: `${image}`,
@@ -107,22 +169,22 @@ export class ChannelResolver {
 
       await newMessage.save();
 
-      let collectInvitees: any[] = [];
+      // let collectInvitees: any[] = [];
 
-      await Promise.all(
-        invitees.map(async person => {
-          let tempPerson = await User.findOne(person);
-          collectInvitees.push(tempPerson);
-          return tempPerson;
-        })
-      );
+      // await Promise.all(
+      //   invitees.map(async person => {
+      //     let tempPerson = await User.findOne(person);
+      //     collectInvitees.push(tempPerson);
+      //     return tempPerson;
+      //   })
+      // );
 
       const returnObj = {
         success: existingChannel && foundThread ? true : false,
         channelId: channelId,
         message: newMessage,
-        user: receiver,
-        invitees: [...collectInvitees]
+        user: receiver
+        // invitees: [...collectInvitees]
       };
 
       // await publish(returnObj).catch((error: Error) => {
@@ -135,8 +197,19 @@ export class ChannelResolver {
     // if we know the addresser and addressee AND images ARE NOT present...
     if (
       (sentBy && receiver && images === undefined) ||
-      (sentBy && receiver && images!.length == 0)
+      (sentBy && receiver && images!.length === 0)
     ) {
+      console.log(
+        "\n\n2b - TOP OF IF STAEMENT IN RESOLVER (ADD MESSAGE TO CHANNEL)",
+        {
+          userId,
+          channelId,
+          message,
+          sentBy,
+          receiver
+        }
+      );
+      console.log("\n\n");
       let createMessage = {
         message: message,
         user: receiver,
@@ -156,27 +229,44 @@ export class ChannelResolver {
 
       await newMessage.save();
 
-      let collectInvitees: User[] = [];
+      // let collectInvitees: User[] = [];
 
-      await Promise.all(
-        invitees.map(async person => {
-          let tempPerson = await User.findOne(person);
-          if (tempPerson) {
-            collectInvitees.push(tempPerson);
-          }
-          return tempPerson;
-        })
-      );
+      // await Promise.all(
+      //   invitees.map(async person => {
+      //     let tempPerson = await User.findOne(person);
+      //     if (tempPerson) {
+      //       collectInvitees.push(tempPerson);
+      //     }
+      //     return tempPerson;
+      //   })
+      // );
 
       const returnObj = {
         success: existingChannel && existingChannel.id ? true : false,
         channelId: channelId,
         message: newMessage,
         user: receiver,
-        invitees: [...collectInvitees]
+        invitees: []
+        // invitees: [...collectInvitees]
       };
 
-      // await publish(returnObj);
+      console.log(
+        "\n\n3 - BEFORE PUBLISH IN RESOLVER (ADD MESSAGE TO CHANNEL)",
+        {
+          userId,
+          channelId,
+          message,
+          sentBy,
+          receiver,
+          returnObj
+        }
+      );
+      console.log("\n\n");
+
+      await publish(returnObj).catch(error =>
+        console.log("VIEW ERROR\n", error)
+      );
+      console.log("RETURNOBJ PUBLISHED", { returnObj });
 
       return returnObj;
     } else {
@@ -282,13 +372,25 @@ export class ChannelResolver {
   @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Channel)
   async createChannel(
-    @Arg("name", () => String) name: string
-    // @Ctx() { userId }: MyContext
-  ): Promise<Channel | undefined> {
+    @Arg("input") { teamId, name }: AddChannelInput
+  ): // @Arg("name", () => String) name: string,
+  // @Arg("teamId", () => String) teamId: string
+  // @Ctx() { userId }: MyContext
+  Promise<Channel | undefined> {
+    const existingTeam = await Team.createQueryBuilder("team")
+      .where("team.id = :teamId", { teamId })
+      .getOne();
+
+    console.log("WHAT'S COMING BACK? - CHECK ARGS", {
+      existingTeam,
+      name,
+      teamId
+    });
+
     const { raw } = await Channel.createQueryBuilder("channel")
       .insert()
       .into("channel")
-      .values({ name }) // , created_by: userId
+      .values({ name, team: existingTeam }) // , created_by: userId
       .execute();
 
     if (raw) {
@@ -325,6 +427,7 @@ export class ChannelResolver {
   ): Promise<Message[]> {
     const getMessages = await Channel.createQueryBuilder("channel")
       .leftJoinAndSelect("channel.messages", "messages")
+      .leftJoinAndSelect("messages.sentBy", "sentBy")
       .where("channel.id = :channelId", { channelId })
       .getOne();
 
@@ -424,9 +527,22 @@ export class ChannelResolver {
 
   @UseMiddleware(isAuth, loggerMiddleware)
   @Query(() => [Channel])
-  async loadChannels(@Ctx() { userId }: MyContext) {
+  async loadChannelsByTeamId(
+    // @Ctx() { userId }: MyContext,
+    @Arg("teamId", { nullable: false }) teamId: string
+  ) {
     // const localUserIds = [""];
-    return await Channel.find({ where: { id: userId } });
+
+    let findChannels = await Channel.createQueryBuilder("channel")
+      .leftJoinAndSelect("channel.team", "teamAlias")
+      .leftJoinAndSelect("channel.invitees", "invitees")
+      .where("teamAlias.id = :teamId", { teamId })
+      .getMany();
+
+    console.log("\n\nFIND CHANNELS", { findChannels });
+    console.log("\n\n");
+
+    return findChannels;
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)

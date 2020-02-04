@@ -10,8 +10,8 @@ export class AddMessageToChannelInput {
   @Field(type => String)
   sentTo: string;
 
-  @Field(() => [ID])
-  invitees: string[];
+  @Field(() => [ID], { nullable: "itemsAndList" })
+  invitees?: string[];
 
   // @ts-ignore
   @Field(type => String)

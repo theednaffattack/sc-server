@@ -6,8 +6,14 @@ import {
   ID,
   UseMiddleware,
   Ctx,
-  Authorized
+  Authorized,
+  ArgsType,
+  Field,
+  Int,
+  Args
 } from "type-graphql";
+import bcrypt from "bcryptjs";
+
 import { User } from "../../entity/User";
 import { Team } from "../../entity/Team";
 import { exampleTeamLoader } from "../utils/data-loaders/batch-example-loader";
@@ -21,6 +27,18 @@ import { MyContext } from "src/types/MyContext";
 // Remove / Delete team
 // Change / Add team owner
 // Remove team member
+
+@ArgsType()
+class TeamLoginArgs {
+  @Field(() => Int)
+  email: string;
+
+  @Field(() => Int)
+  password: string;
+
+  @Field()
+  teamId: string;
+}
 
 @Resolver()
 export class UserTeamResolver {
@@ -53,21 +71,44 @@ export class UserTeamResolver {
   @Authorized("ADMIN", "OWNER")
   @Mutation(() => Team)
   async createTeam(@Arg("name", () => String) name: string) {
-    const { raw } = await Team.createQueryBuilder("team")
+    let duplicateTeamNameError;
+
+    const unspecifiedError = "An unspecified error occurred while creating.";
+
+    const teamResult = await Team.createQueryBuilder("team")
       .insert()
       .into("team")
       .values({ name })
-      .execute();
+      .execute()
+      .catch(error => {
+        const catchMessage = "duplicate key value violates unique constraint";
+        console.error("CHECK ERROR\n", Object.keys(error));
+        console.error("CHECK ERROR\n", {
+          message: error.message,
+          checkStatus: error.message.includes(catchMessage)
+        });
+        if (error.message.includes(catchMessage)) {
+          duplicateTeamNameError =
+            "A team with this name already exists. Please try again with a unique team name.";
+        } else {
+          console.log("WHY IS THIS HAPPENING?");
+          throw Error(unspecifiedError);
+        }
+      });
 
-    if (raw) {
-      const { id } = raw[0];
+    if (duplicateTeamNameError) {
+      throw Error(duplicateTeamNameError);
+    }
+
+    if (teamResult && teamResult.raw) {
+      const { id } = teamResult.raw[0];
       const newTeam = await Team.createQueryBuilder("team")
         .where("team.id = :id", { id })
         .getOne();
 
       return newTeam;
     } else {
-      throw Error(`Unspecified error creating team: ${name}`);
+      throw Error(`${unspecifiedError}: ${name}`);
     }
   }
 
@@ -87,10 +128,69 @@ export class UserTeamResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Query(() => [User])
+  async getAllTeamMembers(@Arg("teamId") teamId: string): Promise<User[]> {
+    // @Ctx() { userId }: MyContext
+
+    // let teamIdFromFakeContext = "f1b8f931-8bcc-471d-b6c3-db67acfda29a"; // name = "ridiculous"
+    const teamMembers = await Team.createQueryBuilder("team")
+      .relation("members")
+      .of(teamId)
+      .loadMany();
+    return teamMembers;
+  }
+
+  @UseMiddleware(isAuth, loggerMiddleware)
   @Query(() => [Team])
-  async loadTeams(@Ctx() { userId }: MyContext) {
-    // const localUserIds = [""];
-    return await Team.find({ where: { id: userId } });
+  async getAllTeamsForUser(@Ctx() { userId }: MyContext): Promise<Team[]> {
+    const getAllTeamsForUser = await Team.createQueryBuilder("team")
+      .select()
+      .leftJoinAndSelect("team.members", "member")
+      .leftJoinAndSelect("team.channels", "channel")
+      // , "member.id = :userId", {
+      //   userId
+      // })
+      .where("member.id = :userId", { userId })
+      .getMany();
+
+    return getAllTeamsForUser;
+  }
+
+  @UseMiddleware(loggerMiddleware)
+  @Mutation(() => User, { nullable: true })
+  async teamLogin(
+    @Args() { email, password, teamId }: TeamLoginArgs,
+    @Ctx() { req }: MyContext
+  ): Promise<User | null> {
+    console.log({ email, password, teamId, req });
+    const teamUser = await User.createQueryBuilder("user")
+      .leftJoinAndSelect("user.teams", "team")
+      .where("user.email = :email", { email })
+      .andWhere("team.id = :userId", { teamId })
+      .getOne();
+
+    if (!teamUser) {
+      return null;
+    }
+
+    const validTeamUser = await bcrypt.compare(password, teamUser.password);
+
+    // if the supplied password is invalid return early
+    if (!validTeamUser) {
+      return null;
+    }
+
+    // if the user has not confirmed via email
+    if (!teamUser.confirmed) {
+      // throw new Error("Please  confirm your account. CONFIRM INVITATION???");
+      return null;
+    }
+    console.log("TEAM USER", { teamUser, validTeamUser });
+
+    // all is well return the user we found
+    req.session!.userId = (teamUser && teamUser.id) || "";
+    req.session!.teamId = teamId;
+    return teamUser;
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)

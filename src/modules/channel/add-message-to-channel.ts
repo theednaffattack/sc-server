@@ -12,7 +12,11 @@ import {
   // Subscription,
   // Publisher,
   ID,
-  InputType
+  InputType,
+  Subscription,
+  ResolverFilterData,
+  Root,
+  Arg
 } from "type-graphql";
 
 import { MyContext } from "../../types/MyContext";
@@ -35,8 +39,8 @@ export class AddMessageToChannelInput {
   @Field(type => String)
   sentTo: string;
 
-  @Field(() => [ID])
-  invitees: string[];
+  @Field(() => [ID], { nullable: "itemsAndList" })
+  invitees?: string[];
 
   // @ts-ignore
   @Field(type => String)
@@ -51,7 +55,7 @@ export interface IAddMessagePayload {
   channelId: string;
   message: Message;
   user: User;
-  invitees: User[];
+  invitees?: User[];
 }
 
 @ObjectType()
@@ -68,51 +72,48 @@ export class AddMessagePayload {
   @Field(() => User)
   user: User;
 
-  @Field(() => [User])
-  invitees: User[];
+  @Field(() => [User], { nullable: "itemsAndList" })
+  invitees?: User[];
 }
 
 @Resolver()
 export class AddMessageToChannelResolver {
-  // @Subscription(() => AddMessagePayload, {
-  //   // @ts-ignore
-  //   topics: ({ context }: any) => {
-  //     if (!context.userId) {
-  //       throw new Error("Not authorized for this topic");
-  //     }
+  @Subscription(() => AddMessagePayload, {
+    topics: ({ context }: any) => {
+      if (!context.userId) {
+        throw new Error("Not authorized for this topic");
+      }
 
-  //     return "THREADS";
-  //   },
+      return "THREADS";
+    },
 
-  //   // @ts-ignore
-  //   filter: ({
-  //     payload,
-  //     args
-  //   }: ResolverFilterData<IAddMessagePayload, AddMessageToChannelInput>) => {
-  //     // filter for followers;
+    // @ts-ignore
+    filter: ({
+      payload,
+      args
+    }: ResolverFilterData<IAddMessagePayload, AddMessageToChannelInput>) => {
+      // filter for followers;
 
-  //     // @ts-ignore
-  //     const messageMatchesChannel = args.data.channelId === payload.channelId;
+      // @ts-ignore
+      const messageMatchesChannel = args.data.channelId === payload.channelId;
 
-  //     if (messageMatchesChannel) {
-  //       return true;
-  //     } else {
-  //       return false;
-  //     }
-  //   }
-  // })
-  // messageChannels(
-  //   @Root() channelPayload: AddMessagePayload,
-  //   // @ts-ignore
-  //   @Arg("data", () => AddMessageToChannelInput)
-  //   input: AddMessageToChannelInput
-  // ): AddMessagePayload {
-  //   console.log("forced to use input".toUpperCase(), Object.keys(input));
+      if (messageMatchesChannel) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  })
+  channelMessages(
+    @Root() channelPayload: AddMessagePayload,
+    @Arg("data", () => AddMessageToChannelInput)
+    input: AddMessageToChannelInput
+  ): AddMessagePayload {
+    console.log("forced to use input".toUpperCase(), Object.keys(input));
 
-  //   return channelPayload; // createdAt: new Date()
-  // }
+    return channelPayload; // createdAt: new Date()
+  }
 
-  // @ts-ignore
   @Mutation(() => AddMessagePayload)
   async addMessageToChannel(
     @Ctx() context: MyContext,
@@ -180,22 +181,22 @@ export class AddMessageToChannelResolver {
 
       await newMessage.save();
 
-      let collectInvitees: any[] = [];
+      // let collectInvitees: any[] = [];
 
-      await Promise.all(
-        input.invitees.map(async person => {
-          let tempPerson = await User.findOne(person);
-          collectInvitees.push(tempPerson);
-          return tempPerson;
-        })
-      );
+      // await Promise.all(
+      //   input.invitees.map(async person => {
+      //     let tempPerson = await User.findOne(person);
+      //     collectInvitees.push(tempPerson);
+      //     return tempPerson;
+      //   })
+      // );
 
       const returnObj = {
         success: existingChannel && foundChannel ? true : false,
         channelId: input.channelId,
         message: newMessage,
-        user: receiver,
-        invitees: [...collectInvitees]
+        user: receiver
+        // invitees: [...collectInvitees]
       };
 
       // await publish(returnObj).catch((error: Error) => {
@@ -228,24 +229,24 @@ export class AddMessageToChannelResolver {
 
       await newMessage.save();
 
-      let collectInvitees: User[] = [];
+      // let collectInvitees: User[] = [];
 
-      await Promise.all(
-        input.invitees.map(async person => {
-          let tempPerson = await User.findOne(person);
-          if (tempPerson) {
-            collectInvitees.push(tempPerson);
-          }
-          return tempPerson;
-        })
-      );
+      // await Promise.all(
+      //   input.invitees.map(async person => {
+      //     let tempPerson = await User.findOne(person);
+      //     if (tempPerson) {
+      //       collectInvitees.push(tempPerson);
+      //     }
+      //     return tempPerson;
+      //   })
+      // );
 
       const returnObj = {
         success: existingChannel && existingChannel.id ? true : false,
         channelId: input.channelId,
         message: newMessage,
-        user: receiver,
-        invitees: [...collectInvitees]
+        user: receiver
+        // invitees: [...collectInvitees]
       };
 
       // await publish(returnObj);

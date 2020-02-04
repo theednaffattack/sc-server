@@ -4,19 +4,19 @@ import { Message } from "../../entity/Message";
 import { User } from "../../entity/User";
 
 @ObjectType()
-export class AddMessagePayload {
+export class AddDirectMessagePayload {
   @Field(() => Boolean)
   success: boolean;
 
   @Field(() => ID)
-  channelId: string;
+  threadId: string;
 
   @Field(() => Message)
   message: Message;
 
   @Field(() => User)
-  user: User;
+  sentBy: User;
 
-  @Field(() => [User], { nullable: "itemsAndList" })
-  invitees?: User[];
+  @Field(() => [User])
+  invitees: User[];
 }
