@@ -13,6 +13,7 @@ import { Field, ID, ObjectType, Int } from "type-graphql";
 
 import { User } from "./User";
 import { Message } from "./Message";
+import { Team } from "./Team";
 
 @ObjectType()
 @Entity()
@@ -41,6 +42,13 @@ export class Thread extends BaseEntity {
     user => user.threads
   )
   user: User;
+
+  @Field(() => Team, { nullable: true })
+  @ManyToOne(
+    () => Team,
+    team => team.threads
+  )
+  team: Team;
 
   @Field(() => [User], { nullable: false })
   @ManyToMany(

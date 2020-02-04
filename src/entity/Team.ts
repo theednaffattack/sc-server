@@ -6,14 +6,16 @@ import {
   JoinTable,
   // OneToMany,
   ManyToMany,
-  ManyToOne
+  ManyToOne,
+  OneToMany
 } from "typeorm";
-import { Field, ID, ObjectType, Ctx } from "type-graphql";
+import { Field, ID, ObjectType } from "type-graphql";
 
 // import { UserTeam } from "./UserTeam";
 import { User } from "./User";
-import { MyContext } from "../types/MyContext";
+// import { MyContext } from "../types/MyContext";
 import { Channel } from "./Channel";
+import { Thread } from "./Thread";
 
 @ObjectType()
 @Entity()
@@ -23,7 +25,7 @@ export class Team extends BaseEntity {
   id: string;
 
   @Field(() => String)
-  @Column()
+  @Column({ unique: true })
   name: string;
 
   @Field(() => User)
@@ -33,12 +35,26 @@ export class Team extends BaseEntity {
   )
   owner: User;
 
-  @Field(() => [Channel])
-  @ManyToOne(
+  // @Field(() => [Channel], { nullable: "itemsAndList" })
+  // @ManyToOne(
+  //   () => Channel,
+  //   channel => channel.team
+  // )
+  // channels: [Channel];
+
+  @Field(() => [Channel], { nullable: "items" })
+  @OneToMany(
     () => Channel,
     channel => channel.team
   )
   channels: [Channel];
+
+  @Field(() => [Thread], { nullable: "items" })
+  @OneToMany(
+    () => Thread,
+    thread => thread.team
+  )
+  threads: [Thread];
 
   // @OneToMany(
   //   () => UserTeam,
@@ -53,8 +69,8 @@ export class Team extends BaseEntity {
   @JoinTable()
   members: User[];
 
-  @Field(() => [User])
-  async membersLoader(@Ctx() { usersLoader }: MyContext): Promise<User[]> {
-    return usersLoader.load(this.id);
-  }
+  // @Field(() => [User])
+  // async membersLoader(@Ctx() { usersLoader }: MyContext): Promise<User[]> {
+  //   return usersLoader.load(this.id);
+  // }
 }

@@ -80,7 +80,7 @@ export class User extends BaseEntity {
   )
   images: Image[];
 
-  @Field(() => [Message])
+  @Field(() => [Message], { nullable: "itemsAndList" })
   mappedMessages: Message[];
 
   @Field(() => [User], { nullable: "itemsAndList" })
