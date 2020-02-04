@@ -43,7 +43,7 @@ export class Message extends BaseEntity {
   @Column()
   message: string;
 
-  mappedMessages: [User];
+  // mappedMessages: [User];
 
   @Field(() => [Image], { nullable: "itemsAndList" })
   @OneToMany(
