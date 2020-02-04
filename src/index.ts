@@ -15,6 +15,7 @@ import { redisSessionPrefix } from "./constants";
 import { createSchema } from "./global-utils/createSchema";
 import { devOrmconfig } from "./config/dev-orm-config";
 import { productionOrmConfig } from "./config/prod-orm-config";
+import { MyContext } from "./types/MyContext";
 // import { createUsersLoader } from "./modules/utils/data-loaders/batch-user-loader";
 
 interface CorsOptionsProps {
@@ -32,17 +33,24 @@ const nodeEnvIsProd = process.env.NODE_ENV === "production";
 
 const ormConnection = nodeEnvIsProd ? productionOrmConfig : devOrmconfig;
 
-const getContextFromHttpRequest = async (req: any, res: any) => {
+const getContextFromHttpRequest = async (
+  req: MyContext["req"],
+  res: MyContext["res"]
+) => {
   if (req && req.session) {
-    const { userId } = req.session;
-    return { userId, req, res };
+    const { teamId, userId } = req.session;
+    return { userId, req, res, teamId };
   }
   return ["No session detected"];
 };
 
 const getContextFromSubscription = (connection: any) => {
   const { userId } = connection.context.req.session;
-  return { userId, req: connection.context.req };
+  return {
+    userId,
+    req: connection.context.req,
+    teamId: connection.context.teamId
+  };
 };
 
 const main = async () => {
