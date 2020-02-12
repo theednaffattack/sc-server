@@ -10,24 +10,12 @@ import {
   PubSub,
   Publisher,
   Query
-  // Query,
-  // ID,
-  // Subscription,
-  // Root,
-  // PubSub,
-  // Publisher
 } from "type-graphql";
 
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
 import { User } from "../../entity/User";
 import { Message } from "../../entity/Message";
-// import { Channel } from "../../entity/Channel";
-// import { channelMemberLoader } from "../utils/data-loaders/batch-channel-members-loader";
-// import { MyContext } from "../../types/MyContext";
-// import { AddMessageToChannelInput } from "./add-message-to-channel-input";
-// import { Image } from "../../entity/Image";
-// import { Team } from "../../entity/Team";
 import { AddDirectMessagePayload } from "./add-direct-message-payload";
 import { CreateDirectMessageInput } from "./create-direct-message-input";
 import { AddDirectMessageToThreadInput } from "./add-direct-message-to-thread-input";
@@ -35,8 +23,6 @@ import { AddDirectMessageToThreadInput } from "./add-direct-message-to-thread-in
 import { Thread } from "../../entity/Thread";
 import { MyContext } from "../../types/MyContext";
 import { Team } from "../../entity/Team";
-// import { Team } from "../../entity/Team";
-// import { AddDirectMessageInput } from "./add-direct-message-input";
 
 enum Topic {
   NewDirectMessage = "NEW_DIRECT_MESSAGE",
@@ -51,7 +37,7 @@ export interface AddDirectMessagePayloadType {
   threadId: string;
   message: Message;
   sentBy: User;
-  invitees: User[];
+  invitees: User["id"][];
 }
 
 @Resolver()
@@ -63,17 +49,8 @@ export class DirectMessageResolver {
     }
   })
   newDirectMessageSub(
-    @Root() directMessagePayload: AddDirectMessagePayload
-  ): AddDirectMessagePayload {
-    console.log("DIRECT MESSAGE PAYLOAD", { directMessagePayload });
-
-    // let returnObj = {
-    //   id: messagePayload.message.id,
-    //   message: messagePayload.message.message,
-    //   sentBy: messagePayload.user,
-    //   __typename: "Message"
-    // };
-
+    @Root() directMessagePayload: AddDirectMessagePayloadType
+  ): AddDirectMessagePayloadType {
     return directMessagePayload;
   }
 
@@ -84,13 +61,13 @@ export class DirectMessageResolver {
     @Ctx() { userId }: MyContext,
     @Arg("input")
     {
-      // @ts-ignore
-      teamId,
+      // teamId,
       threadId,
       message_text,
       invitees
     }: AddDirectMessageToThreadInput,
-    @PubSub(Topic.NewDirectMessage) publish: Publisher<AddDirectMessagePayload>
+    @PubSub(Topic.NewDirectMessage)
+    publish: Publisher<AddDirectMessagePayloadType>
   ): Promise<AddDirectMessagePayload> {
     let { raw: rawMessage } = await Message.createQueryBuilder("message")
       .insert()
@@ -148,7 +125,7 @@ export class DirectMessageResolver {
 
     if (fullNewMessage) {
       await publish({
-        invitees: dmInvitees,
+        invitees: dmInvitees.map(person => person.id),
         message: fullNewMessage,
         success: true,
         threadId: threadId,

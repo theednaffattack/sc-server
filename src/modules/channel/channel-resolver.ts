@@ -531,16 +531,11 @@ export class ChannelResolver {
     // @Ctx() { userId }: MyContext,
     @Arg("teamId", { nullable: false }) teamId: string
   ) {
-    // const localUserIds = [""];
-
     let findChannels = await Channel.createQueryBuilder("channel")
       .leftJoinAndSelect("channel.team", "teamAlias")
       .leftJoinAndSelect("channel.invitees", "invitees")
       .where("teamAlias.id = :teamId", { teamId })
       .getMany();
-
-    console.log("\n\nFIND CHANNELS", { findChannels });
-    console.log("\n\n");
 
     return findChannels;
   }
