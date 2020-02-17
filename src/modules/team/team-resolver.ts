@@ -46,23 +46,32 @@ export class UserTeamResolver {
   @Authorized("ADMIN", "OWNER")
   @Mutation(() => Boolean)
   async addTeamMember(
-    @Arg("userId", () => String) userId: string,
+    @Arg("email", () => String) email: string,
     @Arg("teamId", () => String) teamId: string
   ) {
+    // const findUser = await User.findOne({ where: { email } });
+
     const getUser = await User.createQueryBuilder("user")
-      .where("user.id = :id", { id: userId })
+      .where("user.email = :email", { email: email })
       .getOne()
       .catch(err => {
+        console.log("CATCHING ERRORS", { err });
         throw Error(err);
       });
 
-    await Team.createQueryBuilder("team")
-      .relation("team", "members")
-      .of(teamId)
-      .add(getUser)
-      .catch(err => {
-        throw Error(err);
-      });
+    console.log("CHECK USER FETCH", { getUser });
+
+    if (!getUser) {
+      throw Error("Could not find user with this email.");
+    } else {
+      await Team.createQueryBuilder("team")
+        .relation("team", "members")
+        .of(teamId)
+        .add(getUser)
+        .catch(err => {
+          throw Error(err);
+        });
+    }
 
     return true;
   }
