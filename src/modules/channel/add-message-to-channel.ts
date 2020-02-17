@@ -24,6 +24,7 @@ import { Channel } from "../../entity/Channel";
 import { Message } from "../../entity/Message";
 import { User } from "../../entity/User";
 import { Image } from "../../entity/Image";
+import { DataAddMessageToChannelInput } from "./channel-resolver";
 // import {
 //   AddMessageToChannelInput,
 //   AddMessageToChannelInput_v2
@@ -91,10 +92,11 @@ export class AddMessageToChannelResolver {
     filter: ({
       payload,
       args
-    }: ResolverFilterData<IAddMessagePayload, AddMessageToChannelInput>) => {
+    }: ResolverFilterData<
+      IAddMessagePayload,
+      DataAddMessageToChannelInput
+    >) => {
       // filter for followers;
-
-      // @ts-ignore
       const messageMatchesChannel = args.data.channelId === payload.channelId;
 
       if (messageMatchesChannel) {

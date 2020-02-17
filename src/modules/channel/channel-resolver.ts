@@ -10,7 +10,9 @@ import {
   Subscription,
   Root,
   PubSub,
-  Publisher
+  Publisher,
+  ResolverFilterData
+  // Args
 } from "type-graphql";
 
 import { User } from "../../entity/User";
@@ -25,6 +27,7 @@ import { Image } from "../../entity/Image";
 import { AddMessagePayload } from "./add-message-payload";
 import { Team } from "../../entity/Team";
 import { AddChannelInput } from "./add-channel-input";
+import { IAddMessagePayload } from "./add-message-to-channel";
 
 enum Topic {
   NewChannelMessage = "NEW_CHANNEL_MESSAGE",
@@ -42,16 +45,37 @@ export interface AddChannelPayloadType {
   invitees: User[];
 }
 
+export interface DataAddMessageToChannelInput {
+  data: AddMessageToChannelInput;
+}
+
 @Resolver()
 export class ChannelResolver {
   @Subscription(() => Message, {
     topics: [Topic.NewChannelMessage],
-    filter: () => {
-      return true;
+    filter: ({
+      args,
+      payload
+    }: ResolverFilterData<
+      IAddMessagePayload,
+      DataAddMessageToChannelInput
+    >) => {
+      const messageMatchesChannel = args.data.channelId === payload.channelId;
+
+      if (messageMatchesChannel) {
+        return true;
+      } else {
+        return false;
+      }
+
+      // return true;
     }
   })
-  newMessageSub(@Root() messagePayload: AddMessagePayload): Message {
-    console.log("MESSAGE PAYLOAD", { messagePayload });
+  newMessageSub(
+    @Root() messagePayload: AddMessagePayload,
+    @Arg("data") data: AddMessageToChannelInput
+  ): Message {
+    console.log("NEW MESSAGE SUB, MESSAGE PAYLOAD", { data, messagePayload });
 
     // let returnObj = {
     //   id: messagePayload.message.id,
@@ -81,8 +105,7 @@ export class ChannelResolver {
   @Mutation(() => AddMessagePayload)
   async addMessageToChannel(
     @Ctx() { userId }: MyContext,
-    @Arg("data", () => AddMessageToChannelInput)
-    { channelId, images, message }: AddMessageToChannelInput,
+    @Arg("data") { channelId, images, message }: AddMessageToChannelInput,
     @PubSub(Topic.NewChannelMessage) publish: Publisher<AddMessagePayload>
   ): Promise<AddMessagePayload> {
     console.log("1 - TOP OF RESOLVER (ADD MESSAGE TO CHANNEL)", {
