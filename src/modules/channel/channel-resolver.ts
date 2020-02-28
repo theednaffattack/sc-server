@@ -111,6 +111,7 @@ export class ChannelResolver {
       channelId,
       images,
       message,
+      // @ts-ignore
       teamId
     }: AddMessageToChannelInput,
     @PubSub(Topic.NewChannelMessage) publish: Publisher<AddMessagePayload>
