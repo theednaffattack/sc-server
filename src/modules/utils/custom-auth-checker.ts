@@ -1,28 +1,87 @@
 import { AuthChecker } from "type-graphql";
+import { inspect } from "util";
 
 import { MyContext } from "../../types/MyContext";
-import { User } from "../../entity/User";
+import { UserToTeam } from "../../entity/UserToTeam";
+import { parseArgs } from "./parse-args";
+
+enum AuthorizationStatus {
+  SKIP_AUTH = "SKIP_AUTH",
+  PERFORM_AUTH = "PERFORM_AUTH"
+}
 
 export const customAuthChecker: AuthChecker<MyContext> = async (
-  { context },
+  { args, context, info },
   roles
 ): Promise<boolean> => {
-  const { userId } = context;
-  // here we can read the user from context
-  // and check his permission in the db against the `roles` argument
-  // that comes from the `@Authorized` decorator, eg. ["ADMIN", "MODERATOR"]
-  const getUserRoles = await User.createQueryBuilder("user")
-    .where("user.id = :userId", { userId })
-    .getOne();
+  const shouldAuthorizationBePerformed = info.fieldName.includes(
+    "getAllTeamsForUser"
+  )
+    ? AuthorizationStatus.SKIP_AUTH
+    : AuthorizationStatus.PERFORM_AUTH;
 
-  if (getUserRoles && roles.includes(getUserRoles.teamRole)) {
-    console.log("AUTHORIZATION CHECKER MIDDLEWARE", {
-      getUserRoles,
-      roles,
-      roleMatches: roles.includes(getUserRoles.teamRole),
-      userId
-    });
+  if (shouldAuthorizationBePerformed === AuthorizationStatus.SKIP_AUTH) {
     return true;
-  } // or false if access is denied
-  return false;
+  }
+
+  const getJoinedRelations = await UserToTeam.createQueryBuilder("userToTeam")
+    .select()
+    .where("userToTeam.userId = :userId", { userId: context.userId })
+    .getMany()
+    .catch(error => {
+      throw Error(
+        `Error loading UserToTeam\n${inspect(error, false, 4, true)}`
+      );
+    });
+
+  if (shouldAuthorizationBePerformed) {
+    return (
+      parseArgs(args, info).teamId === getJoinedRelations[0].teamId &&
+      context.userId === getJoinedRelations[0].userId &&
+      examineFetchReturn(getJoinedRelations, roles, args, info)
+    );
+  }
+  return true;
 };
+
+function findDuplicates(data: any) {
+  let sortedData = data
+    .slice()
+    .sort((a: any, b: any) => (a.teamId > b.teamId ? 1 : -1));
+  let duplicateResults = [];
+  for (let i = 0; i < sortedData.length - 1; i++) {
+    if (sortedData[i + 1].teamId === sortedData[i].teamId) {
+      duplicateResults.push(sortedData[i]);
+    }
+  }
+  return duplicateResults;
+}
+
+function examineFetchReturn(
+  data: any[],
+  roles: string[],
+  args: any,
+  info: any
+): boolean {
+  const dupeLength = findDuplicates(data).length;
+
+  if (dupeLength > 0) {
+    throw Error(
+      `A duplicate permission group was found for this user for Team ID(s): ${findDuplicates(
+        data
+      ).map(dupe => dupe.teamId)}, while running ${
+        info.fieldName
+      }  See your Admin about remediation.`
+    );
+  }
+
+  const findDataForThisTeamId = data.filter(
+    item => item.teamId === args.teamId
+  )[0];
+
+  const isRoleAllowed = findDataForThisTeamId.teamRoleAuthorizations.some(
+    (role: any) => roles.includes(role)
+  );
+
+  return isRoleAllowed;
+}
