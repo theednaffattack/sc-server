@@ -18,6 +18,7 @@ import {
 } from "../modules/user/CreateUser";
 import { ProfilePictureResolver } from "../modules/user/ProfilePictureUpload";
 import { EditUserInfoResolver } from "../modules/user/edit-user-info";
+import { AdminEditUserInfoResolver } from "../modules/user/admin/admin-edit-user-info";
 import { SignS3 } from "../modules/aws-s3/s3-sign-mutation";
 import { GetAllMessagesResolver } from "../modules/direct-messages/get-all-my-messages";
 import { GetListToCreateThread } from "../modules/direct-messages/get-list-to-create-thread";
@@ -34,6 +35,7 @@ export const createSchema = () =>
     // alphabetical please!
     resolvers: [
       // AddMessageToChannelResolver,
+      AdminEditUserInfoResolver,
       ChangePasswordFromContextUseridResolver,
       ChangePasswordFromTokenResolver,
       ChannelResolver,
