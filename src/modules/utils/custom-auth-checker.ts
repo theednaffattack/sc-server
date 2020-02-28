@@ -38,7 +38,12 @@ export const customAuthChecker: AuthChecker<MyContext> = async (
     return (
       parseArgs(args, info).teamId === getJoinedRelations[0].teamId &&
       context.userId === getJoinedRelations[0].userId &&
-      examineFetchReturn(getJoinedRelations, roles, args, info)
+      examineFetchReturn(
+        getJoinedRelations,
+        roles,
+        parseArgs(args, info).teamId,
+        info
+      )
     );
   }
   return true;
@@ -60,7 +65,7 @@ function findDuplicates(data: any) {
 function examineFetchReturn(
   data: any[],
   roles: string[],
-  args: any,
+  teamId: any,
   info: any
 ): boolean {
   const dupeLength = findDuplicates(data).length;
@@ -75,11 +80,18 @@ function examineFetchReturn(
     );
   }
 
-  const findDataForThisTeamId = data.filter(
-    item => item.teamId === args.teamId
-  )[0];
+  const findDataForThisTeamId = data.filter(item => {
+    console.log("ITEM", {
+      teamId,
+      item: item.teamId,
+      match: item.teamId === teamId
+    });
+    return item.teamId === teamId;
+  });
 
-  const isRoleAllowed = findDataForThisTeamId.teamRoleAuthorizations.some(
+  console.log("LET'S GOOOOOOOOOOOOO", { data, findDataForThisTeamId });
+
+  const isRoleAllowed = findDataForThisTeamId[0].teamRoleAuthorizations.some(
     (role: any) => roles.includes(role)
   );
 
