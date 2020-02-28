@@ -4,18 +4,16 @@ import {
   PrimaryGeneratedColumn,
   Column,
   JoinTable,
-  // OneToMany,
   ManyToMany,
   ManyToOne,
   OneToMany
 } from "typeorm";
 import { Field, ID, ObjectType } from "type-graphql";
 
-// import { UserTeam } from "./UserTeam";
 import { User } from "./User";
-// import { MyContext } from "../types/MyContext";
 import { Channel } from "./Channel";
 import { Thread } from "./Thread";
+import { UserToTeam } from "./UserToTeam";
 
 @ObjectType()
 @Entity()
@@ -56,21 +54,17 @@ export class Team extends BaseEntity {
   )
   threads: [Thread];
 
-  // @OneToMany(
-  //   () => UserTeam,
-  //   user => user.team,
-  //   { nullable: true }
-  // )
-  // @JoinTable()
-  // userConnection: Promise<UserTeam[]>;
-
+  // @TODO: REMOVE "members"
   // easier way of doing many-to-many
+  @Field(() => [User], { nullable: "items" })
   @ManyToMany(() => User)
   @JoinTable()
   members: User[];
 
-  // @Field(() => [User])
-  // async membersLoader(@Ctx() { usersLoader }: MyContext): Promise<User[]> {
-  //   return usersLoader.load(this.id);
-  // }
+  @Field(() => [UserToTeam], { nullable: "items" })
+  @OneToMany(
+    () => UserToTeam,
+    userToTeams => userToTeams.user
+  )
+  userToTeams: UserToTeam[];
 }
