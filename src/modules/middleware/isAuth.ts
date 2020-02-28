@@ -1,4 +1,5 @@
 import { MiddlewareFn } from "type-graphql";
+
 import { MyContext } from "../../types/MyContext";
 
 export const isAuth: MiddlewareFn<MyContext> = async ({ context }, next) => {
@@ -6,6 +7,5 @@ export const isAuth: MiddlewareFn<MyContext> = async ({ context }, next) => {
     throw new Error("Not authenticated");
   }
 
-  console.log("ISAUTH, VIEW SESSION", context.req.session);
   return next();
 };
