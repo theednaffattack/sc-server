@@ -32,19 +32,19 @@ import { DataAddMessageToChannelInput } from "./channel-resolver";
 
 @InputType()
 export class AddMessageToChannelInput {
-  // @ts-ignore
-  @Field(type => ID)
+  @Field(() => ID)
   channelId: string;
 
-  // @ts-ignore
-  @Field(type => String)
+  @Field(() => ID)
+  teamId: string;
+
+  @Field(() => String)
   sentTo: string;
 
   @Field(() => [ID], { nullable: "itemsAndList" })
   invitees?: string[];
 
-  // @ts-ignore
-  @Field(type => String)
+  @Field(() => String)
   message: string;
 
   @Field(() => [String], { nullable: "itemsAndList" })
@@ -88,7 +88,6 @@ export class AddMessageToChannelResolver {
       return "THREADS";
     },
 
-    // @ts-ignore
     filter: ({
       payload,
       args
@@ -122,6 +121,7 @@ export class AddMessageToChannelResolver {
     @Args(() => AddMessageToChannelInput) input: AddMessageToChannelInput
     // @PubSub("THREADS") publish: Publisher<AddMessagePayload>
   ): Promise<IAddMessagePayload> {
+    console.log("CHECK ADD MESSAGE TO CHANNEL RESOLVER", input.teamId);
     const sentBy = await User.findOne(context.userId);
 
     const receiver = await User.findOne(input.sentTo);
@@ -177,6 +177,8 @@ export class AddMessageToChannelResolver {
 
       existingChannel.last_message = input.message;
 
+      console.log("VIEW EXISTING CHANNEL", { existingChannel });
+
       existingChannel.save();
 
       newMessage.channel = existingChannel;
@@ -210,7 +212,7 @@ export class AddMessageToChannelResolver {
 
     if (
       (sentBy && receiver && input.images === undefined) ||
-      (sentBy && receiver && input.images!.length == 0)
+      (sentBy && receiver && input.images!.length === 0)
     ) {
       let createMessage = {
         message: input.message,
@@ -225,6 +227,9 @@ export class AddMessageToChannelResolver {
       newMessage = await Message.create(createMessage).save();
 
       existingChannel.last_message = input.message;
+
+      console.log("VIEW EXISTING CHANNEL", { existingChannel });
+
       await existingChannel.save();
 
       newMessage.channel = existingChannel;

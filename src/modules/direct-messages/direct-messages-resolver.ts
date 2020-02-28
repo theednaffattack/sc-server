@@ -326,7 +326,8 @@ export class DirectMessageResolver {
   @Authorized("ADMIN", "OWNER", "MEMBER")
   @Query(() => Thread)
   async loadDirectMessagesThreadById(
-    @Arg("threadId") threadId: string
+    @Arg("threadId") threadId: string,
+    @Arg("teamId") teamId: string
   ): Promise<Thread> {
     let getDirectMessagesByThreadId = await Thread.createQueryBuilder("thread")
       .leftJoinAndSelect("thread.team", "team")
@@ -344,7 +345,8 @@ export class DirectMessageResolver {
 
     console.log(
       "VIEW getDirectMessagesByThreadId",
-      getDirectMessagesByThreadId
+      getDirectMessagesByThreadId,
+      teamId
     );
 
     if (getDirectMessagesByThreadId) {
@@ -361,7 +363,9 @@ export class DirectMessageResolver {
     @Arg("teamId") teamId: String,
     @Ctx() ctx: MyContext
   ): Promise<Thread[]> {
-    return await Thread.createQueryBuilder("thread")
+    console.log("RUNNING LOAD DIRECT MESSAGE THREADS BY TEAM AND USER");
+
+    const loadedThreads = await Thread.createQueryBuilder("thread")
       .leftJoinAndSelect("thread.invitees", "invitee")
       .leftJoinAndSelect("thread.invitees", "inviteeReal")
       .leftJoinAndSelect("thread.team", "team")
@@ -369,5 +373,7 @@ export class DirectMessageResolver {
       .where("invitee.id IN (:...userId)", { userId: [ctx.userId] })
       .andWhere("team.id = :teamId", { teamId })
       .getMany();
+    console.log("VIEW LOADED THREADS", { teamId, loadedThreads });
+    return loadedThreads;
   }
 }

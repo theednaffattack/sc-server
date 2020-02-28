@@ -105,15 +105,16 @@ export class ChannelResolver {
   @Mutation(() => AddMessagePayload)
   async addMessageToChannel(
     @Ctx() { userId }: MyContext,
-    @Arg("data") { channelId, images, message }: AddMessageToChannelInput,
+    @Arg("data")
+    {
+      // @ts-ignore
+      channelId,
+      images,
+      message,
+      teamId
+    }: AddMessageToChannelInput,
     @PubSub(Topic.NewChannelMessage) publish: Publisher<AddMessagePayload>
   ): Promise<AddMessagePayload> {
-    console.log("1 - TOP OF RESOLVER (ADD MESSAGE TO CHANNEL)", {
-      userId,
-      channelId,
-      message
-    });
-
     const sentBy = await User.createQueryBuilder("user")
       .where("user.id = :id", { id: userId })
       .getOne();
@@ -446,8 +447,10 @@ export class ChannelResolver {
   @Authorized("ADMIN", "OWNER", "MEMBER")
   @Query(() => [Message])
   async getAllChannelMessages(
-    @Arg("channelId", () => String, { nullable: true }) channelId: string
+    @Arg("channelId", () => String, { nullable: true }) channelId: string,
+    @Arg("teamId", () => String, { nullable: true }) teamId: string
   ): Promise<Message[]> {
+    console.log("AVOIDING TS UNUSED VARIABLE ERROR", teamId);
     const getMessages = await Channel.createQueryBuilder("channel")
       .leftJoinAndSelect("channel.messages", "messages")
       .leftJoinAndSelect("messages.sentBy", "sentBy")
@@ -549,6 +552,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
   @Query(() => [Channel])
   async loadChannelsByTeamId(
     // @Ctx() { userId }: MyContext,

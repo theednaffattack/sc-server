@@ -10,9 +10,11 @@ import {
   ArgsType,
   Field,
   Int,
-  Args
+  Args,
+  ObjectType
 } from "type-graphql";
 import bcrypt from "bcryptjs";
+import { inspect } from "util";
 
 import { User } from "../../entity/User";
 import { Team } from "../../entity/Team";
@@ -20,7 +22,9 @@ import { exampleTeamLoader } from "../utils/data-loaders/batch-example-loader";
 import { teamMemberLoader } from "../utils/data-loaders/batch-team-members-loader";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
-import { MyContext } from "src/types/MyContext";
+import { MyContext } from "../../types/MyContext";
+import { TeamRoleEnum } from "../../entity/Role";
+import { UserToTeam } from "../../entity/UserToTeam";
 
 // ADDITIONAL RESOLVERS NEEDED:
 // Update team name
@@ -40,48 +44,124 @@ class TeamLoginArgs {
   teamId: string;
 }
 
+export interface UserToTeamIdReferencesOnly {
+  userToTeamId: string;
+  userId: string;
+  teamId: string;
+  teamRoleAuthorizations: TeamRoleEnum[];
+}
+
+@ObjectType()
+export class UserToTeamIdReferencesOnlyClass {
+  @Field(() => ID, { nullable: false })
+  userToTeamId: string;
+
+  @Field(() => ID, { nullable: false })
+  userId: string;
+
+  @Field(() => ID, { nullable: false })
+  teamId: string;
+
+  @Field(() => [TeamRoleEnum], { nullable: false })
+  teamRoleAuthorizations: TeamRoleEnum[];
+}
+
+type GetUserIsEmptyType =
+  | "initial_value"
+  | "user_is_empty"
+  | "more_than_one_user_found"
+  | "user_is_correctly_sized";
+
 @Resolver()
 export class UserTeamResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
   @Authorized("ADMIN", "OWNER")
-  @Mutation(() => Boolean)
+  @Mutation(() => UserToTeamIdReferencesOnlyClass)
   async addTeamMember(
     @Arg("email", () => String) email: string,
-    @Arg("teamId", () => String) teamId: string
-  ) {
-    // const findUser = await User.findOne({ where: { email } });
+    @Arg("teamId", () => String) teamId: string,
+    @Arg("roles", () => [TeamRoleEnum]) roles: TeamRoleEnum[]
+  ): Promise<UserToTeamIdReferencesOnly> {
+    console.log("CHECK USER FETCH 1", { email, teamId, roles });
 
+    // evaluate fetch result
+    let getUserEval: GetUserIsEmptyType = "initial_value";
+
+    // evaluate the data to make sure only one user is returned
+    function evalUser(data: User[]): User[] {
+      if (data.length > 1) {
+        getUserEval = "more_than_one_user_found";
+        throw Error(`Error: More than one user contains this email address!`);
+      }
+      if (data.length === 0) {
+        getUserEval = "user_is_empty";
+        return data;
+      }
+      if (data.length === 1) {
+        getUserEval = "user_is_correctly_sized";
+        return data;
+      }
+      throw Error("Nothing to return");
+    }
+
+    // check to see if we have the user in our DB
     const getUser = await User.createQueryBuilder("user")
       .where("user.email = :email", { email: email })
-      .getOne()
+      .getMany()
+      .then(data => {
+        return data;
+      })
+      .then(data => {
+        let returnData = evalUser(data)[0];
+        return returnData;
+      })
       .catch(err => {
-        console.log("CATCHING ERRORS", { err });
+        console.log(`Error fetching User data`, { err, getUserEval });
         throw Error(err);
       });
 
-    console.log("CHECK USER FETCH", { getUser });
+    console.log("CHECK USER FETCH 1", { getUser, roles, getUserEval });
 
-    if (!getUser) {
-      throw Error("Could not find user with this email.");
-    } else {
-      await Team.createQueryBuilder("team")
-        .relation("team", "members")
-        .of(teamId)
-        .add(getUser)
-        .catch(err => {
-          throw Error(err);
-        });
-    }
+    let insertManually;
 
-    return true;
+    insertManually = await UserToTeam.createQueryBuilder("utt")
+      .insert()
+      .values({
+        userId: getUser.id,
+        teamRoleAuthorizations: roles,
+        teamId
+      })
+      .execute();
+
+    const [loadManually] = await Team.createQueryBuilder("team")
+      .relation("team", "userToTeams")
+      .of(getUser.id) // you can use just post id as well
+      .loadMany();
+
+    const [loadUserManually] = await User.createQueryBuilder("user")
+      .relation("user", "userToTeams")
+      .of(teamId)
+      .loadMany();
+
+    console.log("CHECK USER FETCH 2", {
+      email,
+      insertManually: insertManually?.raw,
+      loadManually,
+      roles,
+      loadUserManually
+      // huh
+    });
+
+    return loadUserManually;
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Authorized("ADMIN", "OWNER")
+  // @Authorized("ADMIN", "OWNER")
   @Mutation(() => Team)
-  async createTeam(@Arg("name", () => String) name: string) {
-    let duplicateTeamNameError;
-
+  async createTeam(
+    @Arg("name", () => String) name: string,
+    @Ctx() { userId }: MyContext
+  ) {
     const unspecifiedError = "An unspecified error occurred while creating.";
 
     const teamResult = await Team.createQueryBuilder("team")
@@ -97,23 +177,31 @@ export class UserTeamResolver {
           checkStatus: error.message.includes(catchMessage)
         });
         if (error.message.includes(catchMessage)) {
-          duplicateTeamNameError =
-            "A team with this name already exists. Please try again with a unique team name.";
+          throw Error(
+            "A team with this name already exists. Please try again with a unique team name."
+          );
         } else {
           console.log("WHY IS THIS HAPPENING?");
           throw Error(unspecifiedError);
         }
       });
 
-    if (duplicateTeamNameError) {
-      throw Error(duplicateTeamNameError);
-    }
-
     if (teamResult && teamResult.raw) {
-      const { id } = teamResult.raw[0];
+      const { id: teamId } = teamResult.raw[0];
+
       const newTeam = await Team.createQueryBuilder("team")
-        .where("team.id = :id", { id })
+        .where("team.id = :id", { id: teamId })
         .getOne();
+
+      await UserToTeam.createQueryBuilder("utt")
+        .insert()
+        .values({
+          userId,
+          teamRoleAuthorizations: [TeamRoleEnum.OWNER],
+          teamId: newTeam?.id
+        })
+        .execute()
+        .catch(error => console.error(`${inspect(error, false, 4, true)}`));
 
       return newTeam;
     } else {
@@ -137,15 +225,44 @@ export class UserTeamResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Query(() => [User])
-  async getAllTeamMembers(@Arg("teamId") teamId: string): Promise<User[]> {
+  @Query(() => [UserToTeam])
+  async getAllTeamMembers(
+    @Arg("teamId") teamId: string
+  ): Promise<UserToTeam[]> {
     // @Ctx() { userId }: MyContext
 
-    // let teamIdFromFakeContext = "f1b8f931-8bcc-471d-b6c3-db67acfda29a"; // name = "ridiculous"
-    const teamMembers = await Team.createQueryBuilder("team")
-      .relation("members")
+    console.log("RUNNING - GET ALL TEAM MEMBERS RESOLVER", { teamId });
+
+    const teamMembers = await UserToTeam.createQueryBuilder("userToTeam")
+      .leftJoinAndSelect("userToTeam.user", "user")
+      .where("userToTeam.teamId = :teamId", { teamId })
+      .getMany();
+
+    // const teamMembersOld = await Team.createQueryBuilder("team")
+    //   .relation("members")
+    //   .of(teamId)
+    //   .loadMany();
+
+    const teamMembersAlso = await UserToTeam.createQueryBuilder("userToTeam")
+      .relation(UserToTeam, "user")
       .of(teamId)
       .loadMany();
+
+    console.log(
+      "VIEW TEAM ID - GET ALL TEAM MEMBERS RESOLVER",
+      inspect(
+        {
+          teamId,
+          teamMembers,
+          teamMembersAlso
+          // teamMembersOld
+        },
+        false,
+        4,
+        true
+      )
+    );
+
     return teamMembers;
   }
 
@@ -156,12 +273,29 @@ export class UserTeamResolver {
       .select()
       .leftJoinAndSelect("team.members", "member")
       .leftJoinAndSelect("team.channels", "channel")
+      .leftJoinAndSelect("team.userToTeams", "userToTeams")
       // , "member.id = :userId", {
       //   userId
       // })
       .where("member.id = :userId", { userId })
       .getMany();
 
+    // BELOW IS WORKING
+    const getAllTeamsForUserToo = await UserToTeam.createQueryBuilder("utt")
+      .select()
+      .where("utt.userId = :userId", { userId })
+      .leftJoinAndSelect("utt.team", "teams")
+      .getMany()
+      .catch(error => {
+        throw Error(
+          `Error loading UserToTeam\n${inspect(error, false, 4, true)}`
+        );
+      });
+
+    console.log("GET ALL TEAMS FOR USER", {
+      getAllTeamsForUser,
+      getAllTeamsForUserToo
+    });
     return getAllTeamsForUser;
   }
 
