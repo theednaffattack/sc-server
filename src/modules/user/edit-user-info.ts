@@ -14,31 +14,42 @@ export class EditUserInfoResolver {
   @Mutation(() => User)
   async editUserInfo(
     @Arg("data")
-    { email, firstName, lastName }: EditUserInput,
+    {
+      email,
+      firstName,
+      lastName,
+      // @ts-ignore
+      teamRoles
+    }: EditUserInput,
     @Ctx() ctx: MyContext
   ): Promise<any> {
     // most efficient way to set records in the DB
     // returns nothing
+    let setObject = {
+      email,
+      firstName,
+      lastName
+    };
+
     await User.createQueryBuilder()
       .update(User)
-      .set({ email, firstName, lastName })
+      .set(setObject)
       .where("id = :id", { id: ctx.userId })
       .execute()
-      .then(data => console.log(data))
+      .then(data => console.log("TYPICAL UPDATE", data))
       .catch(error => console.error(error));
 
     // since an error is thrown above on errors
     // it may be smarter to return the data passed in via
     // arguments rather than perform a lookup
-    let userToReturn = await User.createQueryBuilder()
-      .where("id = :id", { id: ctx.userId })
+    let userToReturn = await User.createQueryBuilder("user")
+      .leftJoinAndSelect("user.teamRoles", "teamRoles")
+      .where("user.id = :id", { id: ctx.userId })
       .getOne()
       .catch(error => {
         console.error(error);
         throw Error(`${errorMessageBase}\n${error}`);
       });
-
-    console.log({ userToReturn });
 
     return userToReturn;
   }
