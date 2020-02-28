@@ -112,7 +112,9 @@ const main = async () => {
       //   error.message = "Internal Server Error";
 
       return {
-        message: extensions.exception.stacktrace[0].replace("Error: ", ""),
+        message:
+          extensions?.exception?.stacktrace[0].replace("Error: ", "") ??
+          message,
         path,
         locations
         // extensions
