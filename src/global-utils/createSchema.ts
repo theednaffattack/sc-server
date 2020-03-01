@@ -57,7 +57,8 @@ export const createSchema = () =>
       UserTeamResolver
     ],
     pubSub: pubsub,
-    authChecker: customAuthChecker
+    authChecker: customAuthChecker,
+    dateScalarMode: "isoDate"
     // ({ context: { req } }) => {
     //   // I can read context here
     //   // check permission vs what's in the db "roles" argument
