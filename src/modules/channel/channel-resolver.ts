@@ -212,9 +212,9 @@ export class ChannelResolver {
         // invitees: [...collectInvitees]
       };
 
-      // await publish(returnObj).catch((error: Error) => {
-      //   throw new Error(error.message);
-      // });
+      await publish(returnObj).catch((error: Error) => {
+        throw new Error(error.message);
+      });
 
       return returnObj;
     }
