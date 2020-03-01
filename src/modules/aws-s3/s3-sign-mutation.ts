@@ -5,17 +5,33 @@ import {
   ObjectType,
   ArgsType,
   Field,
-  InputType
+  InputType,
+  Int
 } from "type-graphql";
 import aws from "aws-sdk";
 
 @InputType()
 class ImageSubInput {
   @Field(() => String, { nullable: false })
-  filename: string;
+  type: string;
+
+  @Field()
+  lastModified: number;
+
+  @Field()
+  lastModifiedDate: Date;
+
+  @Field(() => Int, { nullable: false })
+  size: number;
 
   @Field(() => String, { nullable: false })
-  filetype: string;
+  name: string;
+
+  @Field(() => String, { nullable: false })
+  webkitRelativePath: string;
+
+  @Field(() => String, { nullable: false })
+  path: string;
 }
 
 @ArgsType()
@@ -55,9 +71,6 @@ export class SignS3 {
   async signS3(
     @Args(() => SignS3Input) input: SignS3Input
   ): Promise<SignedS3Payload> {
-    // @ts-ignore
-    // const { filename, filetype } = input;
-
     const credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_KEY
@@ -72,12 +85,12 @@ export class SignS3 {
 
     const s3Path = `images`;
 
-    const s3Params = input.files.map((file: any) => {
+    const s3Params = input.files.map(file => {
       return {
         Bucket: s3Bucket,
-        Key: `${s3Path}/${file.filename}`,
+        Key: `${s3Path}/${file.name}`,
         Expires: 60,
-        ContentType: file.filetype
+        ContentType: file.type
         // ACL: "public-read"
       };
     });
