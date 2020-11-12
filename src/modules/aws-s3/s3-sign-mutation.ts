@@ -8,6 +8,9 @@ import {
   InputType,
   Int
 } from "type-graphql";
+
+import { registerEnumType } from "type-graphql";
+
 import aws from "aws-sdk";
 
 @InputType()
@@ -34,23 +37,60 @@ class ImageSubInput {
   path: string;
 }
 
+type S3SignatureActions = "putObject" | "getObject";
+
+export enum S3SignatureAction {
+  putObject = "putObject",
+  getObject = "getObject"
+}
+
+registerEnumType(S3SignatureAction, {
+  name: "S3SignatureAction", // this one is mandatory
+  description:
+    "The actions associated with obtaining a signed URL from S3 (get | put | delete)" // this one is optional
+});
+
 @ArgsType()
 class SignS3Input {
   @Field(() => [ImageSubInput])
   files: ImageSubInput[];
+
+  @Field(() => S3SignatureAction)
+  action: S3SignatureActions;
 }
 
 @ObjectType()
-class SignedS3SubPayload {
+export class SignedS3SubPayload {
   @Field(() => String)
-  url: string;
+  uri: string;
+
+  // @Field()
+  // type: string;
+
+  // @Field()
+  // lastModified: number;
+
+  // @Field()
+  // lastModifiedDate: Date;
+
+  // @Field()
+  // name: string;
+
+  // @Field()
+  // path: string;
+
+  // @Field()
+  // webkitRelativePath: string;
+
+  // @Field()
+  // size: number;
 
   @Field(() => String)
   signedRequest: string;
 }
 
 @ObjectType()
-class SignedS3Payload {
+export class SignedS3Payload {
   @Field(() => [SignedS3SubPayload])
   signatures: SignedS3SubPayload[];
 }
@@ -69,7 +109,7 @@ const s3Bucket = process.env.S3_BUCKET;
 export class SignS3 {
   @Mutation(() => SignedS3Payload)
   async signS3(
-    @Args(() => SignS3Input) input: SignS3Input
+    @Args(() => SignS3Input) { action, files }: SignS3Input
   ): Promise<SignedS3Payload> {
     const credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -83,24 +123,58 @@ export class SignS3 {
       region: "us-west-2"
     });
 
-    const s3Path = `images`;
+    const s3Path = `files`;
 
-    const s3Params = input.files.map(file => {
+    const s3Params = files.map(file => {
+      const newDate = new Date();
+      // if (file.type.includes("image")) {
+      console.log("IS THIS HAPPENING?-1");
       return {
         Bucket: s3Bucket,
-        Key: `${s3Path}/${file.name}`,
+        Key: `${s3Path}/${newDate.toISOString()}-${file.name}`,
         Expires: 60,
-        ContentType: file.type
+        ContentType: file.type,
+        ...file
         // ACL: "public-read"
       };
+      // }
+      console.log("IS THIS HAPPENING?-2");
+
+      // return {
+      //   Bucket: s3Bucket,
+      //   Key: `${s3Path}/${newDate.toISOString()}-${file.name}`,
+      //   Expires: 60,
+      //   ContentType: file.type,
+      //   ContentDisposition: `attachment; filename="${file.name}"`
+      // };
     });
 
     const signedRequests = await Promise.all(
       s3Params.map(param => {
-        let signedRequest = s3.getSignedUrl("putObject", param);
-        const url = `https://${s3Bucket}.s3.amazonaws.com/${param.Key}`;
+        let signedRequest = s3.getSignedUrl(action, param);
+        const uri = `https://${s3Bucket}.s3.amazonaws.com/${param.Key}`;
 
-        return { url, signedRequest };
+        // const {
+        //   type,
+        //   name,
+        //   lastModified,
+        //   lastModifiedDate,
+        //   path,
+        //   size,
+        //   webkitRelativePath
+        // } = param;
+
+        return {
+          uri,
+          signedRequest
+          // type,
+          // name,
+          // lastModified,
+          // lastModifiedDate,
+          // path,
+          // size,
+          // webkitRelativePath
+        };
       })
     );
 

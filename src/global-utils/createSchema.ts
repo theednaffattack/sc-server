@@ -20,6 +20,8 @@ import { ProfilePictureResolver } from "../modules/user/ProfilePictureUpload";
 import { EditUserInfoResolver } from "../modules/user/edit-user-info";
 import { AdminEditUserInfoResolver } from "../modules/user/admin/admin-edit-user-info";
 import { SignS3 } from "../modules/aws-s3/s3-sign-mutation";
+import { SignS3GetObject } from "../modules/aws-s3/s3-sign-mutation-get-object";
+
 import { GetAllMessagesResolver } from "../modules/direct-messages/get-all-my-messages";
 import { GetListToCreateThread } from "../modules/direct-messages/get-list-to-create-thread";
 import { GetMyMessagesFromUserResolver } from "../modules/direct-messages/get-my-messages-from-user";
@@ -54,6 +56,7 @@ export const createSchema = () =>
       ProfilePictureResolver,
       RegisterResolver,
       SignS3,
+      SignS3GetObject,
       UserTeamResolver
     ],
     pubSub: pubsub,

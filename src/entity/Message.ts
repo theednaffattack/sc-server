@@ -12,6 +12,7 @@ import {
 
 import { User } from "./User";
 import { Image } from "./Image";
+import { FileEntity } from "./FileEntity";
 import { Channel } from "./Channel";
 import { Thread } from "./Thread";
 
@@ -52,6 +53,14 @@ export class Message extends BaseEntity {
     { nullable: true }
   )
   images: Image[];
+
+  @Field(() => [FileEntity], { nullable: "itemsAndList" })
+  @OneToMany(
+    () => FileEntity,
+    file => file.message,
+    { nullable: true }
+  )
+  files: FileEntity[];
 
   @Field(() => User)
   @ManyToOne(

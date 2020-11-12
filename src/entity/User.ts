@@ -21,6 +21,7 @@ import { UserToTeam } from "./UserToTeam";
 // import { teamMemberLoader } from "src/modules/utils/data-loaders/batch-team-members-loader";
 import { Channel } from "./Channel";
 import { UserToTeamIdReferencesOnlyClass } from "../modules/team/team-resolver";
+import { FileEntity } from "./FileEntity";
 
 registerEnumType(TeamRoleEnum, {
   name: "TeamRoleEnum", // this one is mandatory
@@ -83,13 +84,21 @@ export class User extends BaseEntity {
   // { nullable: true }
   // following: User[];
 
-  @Field(() => Image, { nullable: "itemsAndList" })
+  @Field(() => [Image], { nullable: "itemsAndList" })
   @OneToMany(
     () => Image,
     image => image.user,
     { nullable: true }
   )
   images: Image[];
+
+  @Field(() => [FileEntity], { nullable: "itemsAndList" })
+  @OneToMany(
+    () => FileEntity,
+    file => file.upload_user,
+    { nullable: true }
+  )
+  files: FileEntity[];
 
   @Field(() => [Message], { nullable: "itemsAndList" })
   mappedMessages: Message[];
@@ -205,6 +214,9 @@ export class UserClassTypeWithReferenceIds {
 
   @Field(() => Image, { nullable: "itemsAndList" })
   images: Image[];
+
+  @Field(() => [FileEntity], { nullable: "itemsAndList" })
+  files: FileEntity[];
 
   @Field(() => [Message], { nullable: "itemsAndList" })
   mappedMessages: Message[];
