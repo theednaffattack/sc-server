@@ -23,6 +23,8 @@ interface CorsOptionsProps {
   origin: (origin: any, callback: any) => void;
 }
 
+const port = process.env.VIRTUAL_PORT;
+
 const RedisStore = connectRedis(session);
 
 let sessionMiddleware: Express.RequestHandler;
@@ -49,7 +51,7 @@ const getContextFromSubscription = (connection: any) => {
   return {
     userId,
     req: connection.context.req,
-    teamId: connection.context.teamId
+    teamId: connection.context.teamId,
   };
 };
 
@@ -82,12 +84,12 @@ const main = async () => {
     subscriptions: {
       path: "/subscriptions",
       onConnect: (_, ws: any) => {
-        return new Promise(res =>
+        return new Promise((res) =>
           sessionMiddleware(ws.upgradeReq, {} as any, () => {
             res({ req: ws.upgradeReq });
           })
         );
-      }
+      },
     },
     // custom error handling from:
     // https://github.com/19majkel94/type-graphql/issues/258
@@ -105,7 +107,7 @@ const main = async () => {
           extensions,
           locations,
           message,
-          path
+          path,
         };
       }
 
@@ -116,7 +118,7 @@ const main = async () => {
           extensions?.exception?.stacktrace[0].replace("Error: ", "") ??
           message,
         path,
-        locations
+        locations,
         // extensions
       };
     },
@@ -135,7 +137,7 @@ const main = async () => {
       //     })
       //   ]
       // }) as any
-    ]
+    ],
   });
 
   const homeIp = internalIp.v4.sync();
@@ -148,18 +150,18 @@ const main = async () => {
         "http://localhost:3000",
         "http://localhost:4000",
         `http://${homeIp}:3000`,
-        `http://${homeIp}:4000`
+        `http://${homeIp}:4000`,
       ];
 
   const corsOptions: CorsOptionsProps = {
     credentials: true,
-    origin: function(origin: any, callback: any) {
+    origin: function (origin: any, callback: any) {
       if (!origin || whitelistedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
         console.error("cors error:: origin: ", origin);
       }
-    }
+    },
   };
 
   // // we're bypassing cors used by apollo-server-express here
@@ -184,7 +186,7 @@ const main = async () => {
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
-        prefix: redisSessionPrefix
+        prefix: redisSessionPrefix,
       }),
       resave: false,
       saveUninitialized: false,
@@ -192,8 +194,8 @@ const main = async () => {
         httpOnly: true,
         secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
-        domain: "eddienaff.dev"
-      }
+        domain: "eddienaff.dev",
+      },
     });
   } else {
     sessionMiddleware = session({
@@ -201,7 +203,7 @@ const main = async () => {
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
-        prefix: redisSessionPrefix
+        prefix: redisSessionPrefix,
       }),
       resave: false,
       saveUninitialized: false,
@@ -209,8 +211,8 @@ const main = async () => {
         httpOnly: true,
         // secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
-        domain: `${homeIp}`
-      }
+        domain: `${homeIp}`,
+      },
     });
   }
 
@@ -227,7 +229,7 @@ const main = async () => {
   // needed for heroku deployment
   // they set the "x-forwarded-proto" header???
   if (nodeEnvIsProd) {
-    app.use(function(req, res, next) {
+    app.use(function (req, res, next) {
       if (req.header("x-forwarded-proto") !== "https") {
         res.redirect("https://" + req.header("host") + req.url);
       } else {
@@ -236,21 +238,21 @@ const main = async () => {
     });
   }
 
-  httpServer.listen(4000, () => {
+  httpServer.listen(port, () => {
     console.log(`
 
 ${colors.bgYellow(colors.black("    server started    "))}
 
 GraphQL Playground available at:
-    ${colors.green("localhost")}: http://localhost:4000${
+    ${colors.green("localhost")}: http://localhost:${port}${
       apolloServer.graphqlPath
     }
-          ${colors.green("LAN")}: http://${homeIp}:4000${
+          ${colors.green("LAN")}: http://${homeIp}:${port}${
       apolloServer.graphqlPath
     }
 
 WebSocket subscriptions available at:
-${colors.green("slack_clone server")}: ws://${homeIp}:4000${
+${colors.green("slack_clone server")}: ws://${homeIp}:${port}${
       apolloServer.subscriptionsPath
     }
 
