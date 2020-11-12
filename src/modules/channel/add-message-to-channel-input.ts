@@ -1,5 +1,7 @@
 import { Field, ID, InputType } from "type-graphql";
 
+import { FileInputHelper } from "../../entity/FileEntity";
+
 @InputType()
 export class AddMessageToChannelInput {
   @Field(() => ID)
@@ -7,6 +9,9 @@ export class AddMessageToChannelInput {
 
   @Field(() => ID)
   teamId: string;
+
+  @Field(() => Date, { nullable: true })
+  created_at: Date;
 
   @Field(() => String)
   sentTo: string;
@@ -19,4 +24,7 @@ export class AddMessageToChannelInput {
 
   @Field(() => [String], { nullable: "itemsAndList" })
   images: string[];
+
+  @Field(() => [FileInputHelper], { nullable: "itemsAndList" })
+  files: FileInputHelper[];
 }

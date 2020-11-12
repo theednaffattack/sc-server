@@ -1,18 +1,11 @@
 import {
-  // Arg,
   Args,
   Resolver,
   Ctx,
   Mutation,
   Field,
   ObjectType,
-  // ResolverFilterData,
-  // Root,
-  // PubSub,
-  // Subscription,
-  // Publisher,
   ID,
-  InputType,
   Subscription,
   ResolverFilterData,
   Root,
@@ -25,31 +18,10 @@ import { Message } from "../../entity/Message";
 import { User } from "../../entity/User";
 import { Image } from "../../entity/Image";
 import { DataAddMessageToChannelInput } from "./channel-resolver";
-// import {
-//   AddMessageToChannelInput,
-//   AddMessageToChannelInput_v2
-// } from "./MessageChannelInput";
+import { createFile } from "./channel-helpers/create-file";
+import { createMessageWithoutFile } from "./channel-helpers/create-message-without-file";
 
-@InputType()
-export class AddMessageToChannelInput {
-  @Field(() => ID)
-  channelId: string;
-
-  @Field(() => ID)
-  teamId: string;
-
-  @Field(() => String)
-  sentTo: string;
-
-  @Field(() => [ID], { nullable: "itemsAndList" })
-  invitees?: string[];
-
-  @Field(() => String)
-  message: string;
-
-  @Field(() => [String], { nullable: "itemsAndList" })
-  images: string[];
-}
+import { AddMessageToChannelInput } from "./add-message-to-channel-input";
 
 export interface IAddMessagePayload {
   success: boolean;
@@ -128,6 +100,40 @@ export class AddMessageToChannelResolver {
 
     let existingChannel;
     let newMessage: any;
+
+    if (
+      sentBy !== undefined &&
+      receiver !== undefined &&
+      input.files &&
+      input.files.length > 0
+    ) {
+      const returnObj = await createFile({
+        channelId: input.channelId,
+        files: input.files,
+        message: input.message,
+        receiver,
+        sentBy
+      });
+      console.log(
+        "VIEW REURN OBJECT INSIDE ADD MESSAGE TO CHANNEL (if files and sentBy and receiver === true)",
+        { returnObj }
+      );
+
+      return returnObj;
+    }
+
+    if (
+      (sentBy && receiver && input.images === undefined) ||
+      (sentBy && receiver && input.files && input.files.length === 0)
+    ) {
+      // do stuff
+      return createMessageWithoutFile({
+        channelId: input.channelId,
+        message: input.message,
+        receiver,
+        sentBy
+      });
+    }
 
     if (sentBy && receiver && input.images && input.images[0]) {
       const newImageData: Image[] = input.images.map(image =>
@@ -212,9 +218,9 @@ export class AddMessageToChannelResolver {
 
     if (
       (sentBy && receiver && input.images === undefined) ||
-      (sentBy && receiver && input.images!.length === 0)
+      (sentBy && receiver && input.images && input.images.length === 0)
     ) {
-      let createMessage = {
+      let createMessageWithoutImage = {
         message: input.message,
         user: receiver,
         sentBy
@@ -224,7 +230,7 @@ export class AddMessageToChannelResolver {
         relations: ["messages", "invitees", "messages.images"]
       }).catch(error => error);
 
-      newMessage = await Message.create(createMessage).save();
+      newMessage = await Message.create(createMessageWithoutImage).save();
 
       existingChannel.last_message = input.message;
 

@@ -23,11 +23,14 @@ import { loggerMiddleware } from "../middleware/logger";
 import { MyContext } from "../../types/MyContext";
 import { Message } from "../../entity/Message";
 import { AddMessageToChannelInput } from "./add-message-to-channel-input";
-import { Image } from "../../entity/Image";
+// import { Image } from "../../entity/Image";
 import { AddMessagePayload } from "./add-message-payload";
 import { Team } from "../../entity/Team";
 import { AddChannelInput } from "./add-channel-input";
 import { IAddMessagePayload } from "./add-message-to-channel";
+import { createFile } from "./channel-helpers/create-file";
+import { createMessageWithoutFile } from "./channel-helpers/create-message-without-file";
+import { inspect } from "util";
 
 enum Topic {
   NewChannelMessage = "NEW_CHANNEL_MESSAGE",
@@ -75,7 +78,11 @@ export class ChannelResolver {
     @Root() messagePayload: AddMessagePayload,
     @Arg("data") data: AddMessageToChannelInput
   ): Message {
-    console.log("NEW MESSAGE SUB, MESSAGE PAYLOAD", { data, messagePayload });
+    console.log("NEW MESSAGE SUB, MESSAGE PAYLOAD", {
+      data,
+      messagePayload,
+      messagePayload_created_at: messagePayload.message.created_at
+    });
 
     // let returnObj = {
     //   id: messagePayload.message.id,
@@ -106,16 +113,11 @@ export class ChannelResolver {
   async addMessageToChannel(
     @Ctx() { userId }: MyContext,
     @Arg("data")
-    {
-      // @ts-ignore
-      channelId,
-      images,
-      message,
-      // @ts-ignore
-      teamId
-    }: AddMessageToChannelInput,
+    { channelId, teamId, files, message }: AddMessageToChannelInput,
     @PubSub(Topic.NewChannelMessage) publish: Publisher<AddMessagePayload>
   ): Promise<AddMessagePayload> {
+    console.log("\n\n✅✅✅\n\nmandatory usage\n".toUpperCase(), { teamId });
+    console.log("\n\n✅✅✅\n");
     const sentBy = await User.createQueryBuilder("user")
       .where("user.id = :id", { id: userId })
       .getOne();
@@ -124,93 +126,28 @@ export class ChannelResolver {
       .where("user.id = :id", { id: userId })
       .getOne();
 
-    let existingChannel;
-    let newMessage: any;
+    // let existingChannel;
+    // let newMessage: any;
 
-    // if we know the addresser and addressee AND images ARE present...
-    if (sentBy && receiver && images && images[0]) {
-      console.log(
-        "\n\n2a - TOP OF IF STAEMENT IN RESOLVER (ADD MESSAGE TO CHANNEL)",
-        {
-          userId,
-          channelId,
-          message,
-          sentBy,
-          receiver,
-          images
-        }
-      );
-      console.log("\n\n");
-      const newImageData: Image[] = images.map(image =>
-        Image.create({
-          uri: `${image}`,
-          user: sentBy
-        })
-      );
-
-      // save that image to the database
-      let newImages = await Promise.all(
-        newImageData.map(async newImage => await newImage.save())
-      );
-
-      // add the images to the user.images
-      // field / column
-      if (newImages !== null && newImages.length > 0) {
-        if (!sentBy.images || sentBy.images.length === 0) {
-          sentBy.images = [...newImages];
-        }
-        if (sentBy.images && sentBy.images.length > 0) {
-          sentBy.images = [...sentBy.images, ...newImages];
-        }
-      }
-
-      let createMessage = {
+    // if we know the addresser and addressee AND *FILES* ARE present...
+    if (
+      sentBy !== undefined &&
+      receiver !== undefined &&
+      files &&
+      files.length > 0
+    ) {
+      let returnObj = await createFile({
+        channelId: channelId,
+        files: files,
         message: message,
-        user: receiver,
-        sentBy,
-        images: [...newImages]
-      };
-
-      // CREATING rather than REPLYING to message...
-      newMessage = await Message.create(createMessage).save();
-
-      newImages.forEach(async image => {
-        image.message = newMessage.id;
-        await image.save();
-        return image;
+        receiver,
+        sentBy
       });
 
-      existingChannel = await Channel.findOne(channelId, {
-        relations: ["messages", "invitees", "messages.images"]
-      }).catch(error => error);
-
-      const foundThread = existingChannel && existingChannel.id ? true : false;
-
-      existingChannel.last_message = message;
-
-      existingChannel.save();
-
-      newMessage.channel = existingChannel;
-
-      await newMessage.save();
-
-      // let collectInvitees: any[] = [];
-
-      // await Promise.all(
-      //   invitees.map(async person => {
-      //     let tempPerson = await User.findOne(person);
-      //     collectInvitees.push(tempPerson);
-      //     return tempPerson;
-      //   })
-      // );
-
-      const returnObj = {
-        success: existingChannel && foundThread ? true : false,
-        channelId: channelId,
-        message: newMessage,
-        user: receiver
-        // invitees: [...collectInvitees]
-      };
+      console.log(
+        "OKAY PUBLISHING FILE - addMessageToChannel Resolver",
+        inspect(returnObj.message.created_at, false, 4, true)
+      );
 
       await publish(returnObj).catch((error: Error) => {
         throw new Error(error.message);
@@ -219,86 +156,201 @@ export class ChannelResolver {
       return returnObj;
     }
 
-    // if we know the addresser and addressee AND images ARE NOT present...
+    // if we know the addresser and addressee AND **FILES** ARE NOT present...
     if (
-      (sentBy && receiver && images === undefined) ||
-      (sentBy && receiver && images!.length === 0)
+      (sentBy && receiver && files === undefined) ||
+      (sentBy && receiver && files && files.length === 0)
     ) {
-      console.log(
-        "\n\n2b - TOP OF IF STAEMENT IN RESOLVER (ADD MESSAGE TO CHANNEL)",
-        {
-          userId,
-          channelId,
-          message,
-          sentBy,
-          receiver
-        }
-      );
-      console.log("\n\n");
-      let createMessage = {
-        message: message,
-        user: receiver,
+      let returnObj = await createMessageWithoutFile({
+        channelId,
+        message,
+        receiver,
         sentBy
-      };
+      });
 
-      existingChannel = await Channel.findOne(channelId, {
-        relations: ["messages", "invitees", "messages.images"]
-      }).catch(error => error);
-
-      newMessage = await Message.create(createMessage).save();
-
-      existingChannel.last_message = message;
-      await existingChannel.save();
-
-      newMessage.channel = existingChannel;
-
-      await newMessage.save();
-
-      // let collectInvitees: User[] = [];
-
-      // await Promise.all(
-      //   invitees.map(async person => {
-      //     let tempPerson = await User.findOne(person);
-      //     if (tempPerson) {
-      //       collectInvitees.push(tempPerson);
-      //     }
-      //     return tempPerson;
-      //   })
-      // );
-
-      const returnObj = {
-        success: existingChannel && existingChannel.id ? true : false,
-        channelId: channelId,
-        message: newMessage,
-        user: receiver,
-        invitees: []
-        // invitees: [...collectInvitees]
-      };
-
-      console.log(
-        "\n\n3 - BEFORE PUBLISH IN RESOLVER (ADD MESSAGE TO CHANNEL)",
-        {
-          userId,
-          channelId,
-          message,
-          sentBy,
-          receiver,
-          returnObj
-        }
-      );
-      console.log("\n\n");
-
-      await publish(returnObj).catch(error =>
-        console.log("VIEW ERROR\n", error)
-      );
-      console.log("RETURNOBJ PUBLISHED", { returnObj });
+      await publish(returnObj).catch((error: Error) => {
+        throw new Error(error.message);
+      });
 
       return returnObj;
-    } else {
-      throw Error(
-        `unable to find sender or receiver / sender / image: ${sentBy}\nreceiver: ${receiver}`
-      );
     }
+    // otherwise throw an error
+    throw Error(
+      `unable to find sender or receiver / sender / image: ${sentBy}\nreceiver: ${receiver}`
+    );
+
+    // if we know the addresser and addressee AND images ARE present...
+    // if (sentBy && receiver && images && images[0]) {
+    //   console.log(
+    //     "\n\n2a - TOP OF IF STAEMENT IN RESOLVER (ADD MESSAGE TO CHANNEL)",
+    //     {
+    //       userId,
+    //       channelId,
+    //       message,
+    //       sentBy,
+    //       receiver,
+    //       images
+    //     }
+    //   );
+    //   console.log("\n\n");
+    //   const newImageData: Image[] = images.map(image =>
+    //     Image.create({
+    //       uri: `${image}`,
+    //       user: sentBy
+    //     })
+    //   );
+
+    //   // save that image to the database
+    //   let newImages = await Promise.all(
+    //     newImageData.map(async newImage => await newImage.save())
+    //   );
+
+    //   // add the images to the user.images
+    //   // field / column
+    //   if (newImages !== null && newImages.length > 0) {
+    //     if (!sentBy.images || sentBy.images.length === 0) {
+    //       sentBy.images = [...newImages];
+    //     }
+    //     if (sentBy.images && sentBy.images.length > 0) {
+    //       sentBy.images = [...sentBy.images, ...newImages];
+    //     }
+    //   }
+
+    //   let createMessage = {
+    //     message: message,
+    //     user: receiver,
+    //     sentBy,
+    //     images: [...newImages]
+    //   };
+
+    //   // CREATING rather than REPLYING to message...
+    //   newMessage = await Message.create(createMessage).save();
+
+    //   newImages.forEach(async image => {
+    //     image.message = newMessage.id;
+    //     await image.save();
+    //     return image;
+    //   });
+
+    //   existingChannel = await Channel.findOne(channelId, {
+    //     relations: ["messages", "invitees", "messages.images"]
+    //   }).catch(error => error);
+
+    //   const foundThread = existingChannel && existingChannel.id ? true : false;
+
+    //   existingChannel.last_message = message;
+
+    //   existingChannel.save();
+
+    //   newMessage.channel = existingChannel;
+
+    //   await newMessage.save();
+
+    //   // let collectInvitees: any[] = [];
+
+    //   // await Promise.all(
+    //   //   invitees.map(async person => {
+    //   //     let tempPerson = await User.findOne(person);
+    //   //     collectInvitees.push(tempPerson);
+    //   //     return tempPerson;
+    //   //   })
+    //   // );
+
+    //   const returnObj = {
+    //     success: existingChannel && foundThread ? true : false,
+    //     channelId: channelId,
+    //     message: newMessage,
+    //     user: receiver
+    //     // invitees: [...collectInvitees]
+    //   };
+
+    //   await publish(returnObj).catch((error: Error) => {
+    //     throw new Error(error.message);
+    //   });
+
+    //   return returnObj;
+    // }
+
+    // // if we know the addresser and addressee AND images ARE NOT present...
+    // if (
+    //   (sentBy && receiver && images === undefined) ||
+    //   (sentBy && receiver && images!.length === 0)
+    // ) {
+    //   console.log(
+    //     "\n\n2b - TOP OF IF STAEMENT IN RESOLVER (ADD MESSAGE TO CHANNEL)",
+    //     {
+    //       userId,
+    //       channelId,
+    //       message,
+    //       sentBy,
+    //       receiver
+    //     }
+    //   );
+    //   console.log("\n\n");
+    //   let createMessage = {
+    //     message: message,
+    //     user: receiver,
+    //     sentBy
+    //   };
+
+    //   existingChannel = await Channel.findOne(channelId, {
+    //     relations: ["messages", "invitees", "messages.images"]
+    //   }).catch(error => error);
+
+    //   newMessage = await Message.create(createMessage).save();
+
+    //   existingChannel.last_message = message;
+    //   await existingChannel.save();
+
+    //   newMessage.channel = existingChannel;
+
+    //   await newMessage.save();
+
+    //   // let collectInvitees: User[] = [];
+
+    //   // await Promise.all(
+    //   //   invitees.map(async person => {
+    //   //     let tempPerson = await User.findOne(person);
+    //   //     if (tempPerson) {
+    //   //       collectInvitees.push(tempPerson);
+    //   //     }
+    //   //     return tempPerson;
+    //   //   })
+    //   // );
+
+    //   const returnObj = {
+    //     success: existingChannel && existingChannel.id ? true : false,
+    //     channelId: channelId,
+    //     message: newMessage,
+    //     user: receiver,
+    //     invitees: []
+    //     // invitees: [...collectInvitees]
+    //   };
+
+    //   console.log(
+    //     "\n\n3 - BEFORE PUBLISH IN RESOLVER (ADD MESSAGE TO CHANNEL)",
+    //     {
+    //       userId,
+    //       channelId,
+    //       message,
+    //       sentBy,
+    //       receiver,
+    //       returnObj
+    //     }
+    //   );
+    //   console.log("\n\n");
+
+    //   await publish(returnObj).catch(error =>
+    //     console.log("VIEW ERROR\n", error)
+    //   );
+    //   console.log("RETURNOBJ PUBLISHED", { returnObj });
+
+    //   return returnObj;
+    // } else {
+    //   throw Error(
+    //     `unable to find sender or receiver / sender / image: ${sentBy}\nreceiver: ${receiver}`
+    //   );
+    // }
 
     // return {
     //   success: true ,
@@ -451,12 +503,24 @@ export class ChannelResolver {
     @Arg("channelId", () => String, { nullable: true }) channelId: string,
     @Arg("teamId", () => String, { nullable: true }) teamId: string
   ): Promise<Message[]> {
-    console.log("AVOIDING TS UNUSED VARIABLE ERROR", teamId);
     const getMessages = await Channel.createQueryBuilder("channel")
       .leftJoinAndSelect("channel.messages", "messages")
+      .leftJoinAndSelect("messages.files", "files")
       .leftJoinAndSelect("messages.sentBy", "sentBy")
+
+      .orderBy("messages.created_at", "ASC")
       .where("channel.id = :channelId", { channelId })
       .getOne();
+
+    console.log(
+      "AVOIDING TS UNUSED VARIABLE ERROR",
+      inspect(
+        { teamId, getMessages_created_at: getMessages?.created_at },
+        false,
+        2,
+        true
+      )
+    );
 
     // TODO: see if this will work in a try catch
     // when supplying a bad ID
@@ -559,11 +623,14 @@ export class ChannelResolver {
     // @Ctx() { userId }: MyContext,
     @Arg("teamId", { nullable: false }) teamId: string
   ) {
+    console.log("WHAT IS TEAM ID", { teamId });
     let findChannels = await Channel.createQueryBuilder("channel")
       .leftJoinAndSelect("channel.team", "teamAlias")
       .leftJoinAndSelect("channel.invitees", "invitees")
       .where("teamAlias.id = :teamId", { teamId })
       .getMany();
+
+    console.log("WHAT IS FIND CHANNELS", { teamId, findChannels });
 
     return findChannels;
   }
