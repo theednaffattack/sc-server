@@ -7,7 +7,7 @@ import { parseArgs } from "./parse-args";
 
 enum AuthorizationStatus {
   SKIP_AUTH = "SKIP_AUTH",
-  PERFORM_AUTH = "PERFORM_AUTH"
+  PERFORM_AUTH = "PERFORM_AUTH",
 }
 
 export const customAuthChecker: AuthChecker<MyContext> = async (
@@ -28,7 +28,7 @@ export const customAuthChecker: AuthChecker<MyContext> = async (
     .select()
     .where("userToTeam.userId = :userId", { userId: context.userId })
     .getMany()
-    .catch(error => {
+    .catch((error) => {
       throw Error(
         `Error loading UserToTeam\n${inspect(error, false, 4, true)}`
       );
@@ -74,22 +74,20 @@ function examineFetchReturn(
     throw Error(
       `A duplicate permission group was found for this user for Team ID(s): ${findDuplicates(
         data
-      ).map(dupe => dupe.teamId)}, while running ${
+      ).map((dupe) => dupe.teamId)}, while running ${
         info.fieldName
       }  See your Admin about remediation.`
     );
   }
 
-  const findDataForThisTeamId = data.filter(item => {
+  const findDataForThisTeamId = data.filter((item) => {
     console.log("ITEM", {
       teamId,
       item: item.teamId,
-      match: item.teamId === teamId
+      match: item.teamId === teamId,
     });
     return item.teamId === teamId;
   });
-
-  console.log("LET'S GOOOOOOOOOOOOO", { data, findDataForThisTeamId });
 
   const isRoleAllowed = findDataForThisTeamId[0].teamRoleAuthorizations.some(
     (role: any) => roles.includes(role)
