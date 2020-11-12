@@ -3,6 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "ts-node -r dotenv/config src/index.ts",
+    "local-start": "tsc && node -r dotenv/config src/index.ts",
+    "dev": "nodemon -r dotenv/config --exec ts-node src/index.ts",
+    "tsndev": "ts-node-dev --respawn src/index.ts",
+    "db:setup": "ts-node ./src/test-utils/setup.ts",
+    "test": "npm run db:setup && TERM=dumb jest --detectOpenHandles",
+    "tdev": "npm run db:setup && TERM=dumb jest --watch --detectOpenHandles"
+  },
   "dependencies": {
     "apollo-server-express": "2.9.9",
     "aws-sdk": "^2.590.0",
@@ -57,14 +66,5 @@
     "ts-node-dev": "^1.0.0-pre.32",
     "typescript": "3.7.5",
     "util": "^0.12.1"
-  },
-  "scripts": {
-    "start": "ts-node -r dotenv/config src/index.ts",
-    "local-start": "tsc && node -r dotenv/config src/index.ts",
-    "dev": "nodemon -r dotenv/config --exec ts-node src/index.ts",
-    "tsndev": "ts-node-dev --respawn src/index.ts",
-    "db:setup": "ts-node ./src/test-utils/setup.ts",
-    "test": "npm run db:setup && TERM=dumb jest --detectOpenHandles",
-    "tdev": "npm run db:setup && TERM=dumb jest --watch --detectOpenHandles"
   }
 }
