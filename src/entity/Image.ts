@@ -35,11 +35,4 @@ export class Image extends BaseEntity {
     user => user.images
   )
   user: User;
-
-  // @Field(() => Post)
-  // @ManyToOne(
-  //   () => Post,
-  //   post => post.images
-  // )
-  // post: Post;
 }
