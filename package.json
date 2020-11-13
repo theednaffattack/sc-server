@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node -r dotenv/config src/index.ts",
+    "start": "node -r dotenv/config dist/index.js",
+    "weird-start": "ts-node -r dotenv/config src/index.ts",
     "build": "tsc",
     "local-start": "tsc && node -r dotenv/config src/index.ts",
     "dev": "nodemon -r dotenv/config --exec ts-node src/index.ts",
