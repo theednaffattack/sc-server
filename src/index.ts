@@ -154,8 +154,8 @@ const main = async () => {
 
   const allowedListOfOrigins = nodeEnvIsProd
     ? [
-        `${process.env.PRODUCTION_CLIENT_ORIGIN}`,
-        `${process.env.PRODUCTION_API_ORIGIN}`,
+        `${process.env.PRODUCTION_CLIENT_URI}`,
+        `${process.env.PRODUCTION_API_URI}`,
         `${process.env.GRAPHQL_ENDPOINT}`,
       ]
     : [
