@@ -69,8 +69,9 @@ const main = async () => {
     console.warn("CREATE SCHEMA ERROR", error);
   }
   const apolloServer = new ApolloServer({
-    schema,
+    introspection: true,
     playground: { version: "1.7.25", endpoint: "/graphql" },
+    schema,
     context: ({ req, res, connection }: any) => {
       if (connection) {
         return getContextFromSubscription(connection);
@@ -157,6 +158,7 @@ const main = async () => {
         `${process.env.PRODUCTION_CLIENT_URI}`,
         `${process.env.PRODUCTION_API_URI}`,
         `${process.env.GRAPHQL_ENDPOINT}`,
+        "https://scserver.ednaff.dev",
       ]
     : [
         "http://localhost:3000",
@@ -206,7 +208,7 @@ const main = async () => {
         httpOnly: true,
         secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
-        domain: "eddienaff.dev",
+        domain: "ednaff.dev",
       },
     });
   } else {
