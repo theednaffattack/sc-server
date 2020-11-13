@@ -32,8 +32,7 @@ RUN yarn install --frozen-lockfile --production
 COPY --from=builder /usr/src/app/dist ./dist
 # Not sure if copying the env is a good idea. Maybe just for dev
 COPY .env .
-# COPY wait-for-postgres.sh .
-COPY wait-for-it.sh .
+
 
 # Inform Docker that the container is listening on the specified port at runtime.
 # EXPOSE 6000
