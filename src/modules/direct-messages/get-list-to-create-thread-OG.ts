@@ -1,8 +1,8 @@
-import { Resolver, Ctx, Query, ObjectType, Field, ID, Arg } from "type-graphql";
+import { Resolver, Ctx, Query, ObjectType, Field, ID } from "type-graphql";
 
 import { User } from "../../entity/User";
 import { MyContext } from "../../types/MyContext";
-import { Team } from "src/entity/Team";
+// import { Team } from "src/entity/Team";
 
 @ObjectType()
 export class TransUserReturn {
@@ -23,55 +23,53 @@ export class TransUserReturn {
 export class GetListToCreateThread {
   @Query(() => TransUserReturn, { nullable: true })
   async getListToCreateThread(
-    @Ctx() ctx: MyContext,
-    @Arg("teamId") teamId: string
+    @Ctx() ctx: MyContext
+    // @Arg("teamId") teamId: string
   ): Promise<any> {
     let me = ctx.req && ctx.req.session ? ctx.req.session.userId : null;
     if (me) {
       const thoseICanMessage: any[] = [];
 
       let meWithFollowers = await User.findOne(me, {
-        relations: ["followers", "following"]
+        relations: ["followers", "following"],
       });
 
       // FENCE START
 
-      let myTeam = await Team.createQueryBuilder("team")
-        .where("channel.id = :id", { id: teamId })
-        .getOne();
+      // let myTeam = await Team.createQueryBuilder("team")
+      //   .where("channel.id = :id", { id: teamId })
+      //   .getOne();
 
-      let teamMembers = await Team.createQueryBuilder()
-        .relation(Team, "members")
-        .of(myTeam) // you can use just team id as well
-        .loadMany();
+      // let teamMembers = await Team.createQueryBuilder()
+      //   .relation(Team, "members")
+      //   .of(myTeam) // you can use just team id as well
+      //   .loadMany();
 
       // FENCE END FRI :: 2020/01/24 :: 3:45PM
 
-      // let returnObj: any = {};
-      // if (meWithFollowers) {
-      //   meWithFollowers.followers.forEach(follower => {
-      //     thoseICanMessage.push(follower);
-      //   });
+      let returnObj: any = {};
+      if (meWithFollowers) {
+        meWithFollowers.followers.forEach((follower) => {
+          thoseICanMessage.push(follower);
+        });
 
-      //   meWithFollowers.following.forEach(Ifollow => {
-      //     thoseICanMessage.push(Ifollow);
-      //   });
+        meWithFollowers.following.forEach((Ifollow) => {
+          thoseICanMessage.push(Ifollow);
+        });
 
-      //   const finalMessageList = new Set(thoseICanMessage);
+        // const finalMessageList = new Set(thoseICanMessage);
 
-      //   // @ts-ignore
-      //   const finalUniqMessageList = [
-      //     ...new Set(thoseICanMessage.map(user => user.id))
-      //   ];
+        // const finalUniqMessageList = [
+        //   ...new Set(thoseICanMessage.map(user => user.id))
+        // ];
 
-      //   // @ts-ignore
-      //   const finalMsgListArray = Array.from(finalMessageList);
+        // const finalMsgListArray = Array.from(finalMessageList);
 
-      //   returnObj.id = meWithFollowers.id;
+        returnObj.id = meWithFollowers.id;
 
-      //   returnObj.firstName = meWithFollowers.firstName;
-      //   returnObj.lastName = meWithFollowers.lastName;
-      // }
+        returnObj.firstName = meWithFollowers.firstName;
+        returnObj.lastName = meWithFollowers.lastName;
+      }
 
       // const array = [
       //   { id: 3, name: "Central Microscopy", fiscalYear: 2018 },
@@ -85,7 +83,7 @@ export class GetListToCreateThread {
         if (!map.has(item.id)) {
           map.set(item.id, true); // set any value to Map
           result.push({
-            ...item
+            ...item,
           });
         }
       }
