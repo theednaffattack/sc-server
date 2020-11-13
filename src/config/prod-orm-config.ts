@@ -11,7 +11,7 @@ export const productionOrmConfig: PostgresConnectionOptions = {
   database: process.env.POSTGRES_DBNAME,
   logging: process.env.NODE_ENV !== "production",
   synchronize: process.env.NODE_ENV !== "production",
-  entities: ["src/entity/*.*"],
+  entities: ["dist/entity/*.*"],
   migrations: ["src/migration/**/*.ts"],
   subscribers: ["src/subscriber/**/*.ts"],
 };
