@@ -1,0 +1,84 @@
+version: "3"
+services:
+  sc-redis:
+    image: redis
+    container_name: ${REDIS_CONTAINER_NAME}
+    # command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ${REDIS_DB_PATH}:/data
+    # ports:
+    #   - "6379:6379"
+  sc-db:
+    # build:
+    #   context: .
+    #   dockerfile: db/Dockerfile
+    container_name: ${DB_CONTAINER_NAME}
+    command: -c ssl=on -c ssl_cert_file=/var/lib/postgresql/server.crt -c ssl_key_file=/var/lib/postgresql/server.key
+    restart: on-failure
+    image: ${SCAPI_POSTGRES_IMAGE}
+    environment:
+      ALLOW_IP_RANGE: 0.0.0.0/0
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME}
+      POSTGRES_DB: ${POSTGRES_DBNAME}
+      VIRTUAL_PORT: ${VIRTUAL_PORT}
+      # SSL_CERT_FILE: ${SSL_CERT_FILE}
+      # SSL_KEY_FILE: ${SSL_KEY_FILE}
+      # SSL_CA_FILE: ${SSL_CHAIN_FILE}
+      # POSTGRES_MULTIPLE_EXTENSIONS: postgis,hstore,postgis_topology,postgis_raster,pgrouting
+
+    volumes:
+      - ${DB_PATH}:/var/lib/postgresql/12/main
+      # - ${NGINX_LETS_ENCRYPT_CERTS_VOLUME}${PRODUCTION_API_ORIGIN}/cert.pem:/var/lib/postgresql/server.crt
+      # - ${NGINX_LETS_ENCRYPT_CERTS_VOLUME}${PRODUCTION_API_ORIGIN}/key.pem:/var/lib/postgresql/server.key
+      # - ./db/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+
+  sc-api:
+    image: ${SCAPI_IMAGE}
+    expose:
+      - 80
+    depends_on:
+      - sc-redis
+      - sc-db
+    container_name: ${API_CONTAINER_NAME}
+    # command:
+    #   [
+    #     "./wait-for-it.sh",
+    #     "fg-db:${POSTGRES_PORT}",
+    #     "--",
+    #     "node",
+    #     "/app/dist/index.js",
+    #   ]
+    environment:
+      VIRTUAL_PORT: ${VIRTUAL_PORT}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      PORT: ${VIRTUAL_PORT}
+      GRAPHQL_ENDPOINT: ${GRAPHQL_ENDPOINT}
+      SESSION_SECRET: ${SESSION_SECRET}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT_NUMBER: ${REDIS_PORT_NUMBER}
+      AT_DB_HOST: ${PG_DB_HOST}
+      AT_DB_PORT: ${PG_DB_PORT}
+      POSTGRES_PASS: ${POSTGRES_PASS}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME}
+      POSTGRES_DB: ${POSTGRES_DBNAME}
+      TYPEORM_SYNCHRONIZE: "false"
+      TYPEORM_LOGGING: "false"
+      PRODUCTION_CLIENT_ORIGIN: ${PRODUCTION_CLIENT_ORIGIN}
+      PRODUCTION_API_ORIGIN: ${PRODUCTION_API_ORIGIN}
+      BUILD_FLAG: ${BUILD_FLAG}
+      POSTMARK_API_TOKEN: ${POSTMARK_API_TOKEN}
+    ports:
+      - "${VIRTUAL_PORT}:${VIRTUAL_PORT}"
+
+networks:
+  default:
+    external:
+      name: ${NETWORK}
