@@ -145,7 +145,10 @@ const main = async () => {
   const app = Express.default();
 
   const whitelistedOrigins = nodeEnvIsProd
-    ? [`${process.env.PRODUCTION_ORIGIN}`, `${process.env.GRAPHQL_ENDPOINT}`]
+    ? [
+        `${process.env.PRODUCTION_CLIENT_ORIGIN}`,
+        `${process.env.GRAPHQL_ENDPOINT}`,
+      ]
     : [
         "http://localhost:3000",
         "http://localhost:4000",
