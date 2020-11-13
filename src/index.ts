@@ -56,10 +56,18 @@ const getContextFromSubscription = (connection: any) => {
 };
 
 const main = async () => {
-  await createConnection(ormConnection);
+  try {
+    await createConnection(ormConnection);
+  } catch (error) {
+    console.warn("CONNECTION ERROR", error);
+  }
 
-  const schema = await createSchema();
-
+  let schema;
+  try {
+    schema = await createSchema();
+  } catch (error) {
+    console.warn("CREATE SCHEMA ERROR", error);
+  }
   const apolloServer = new ApolloServer({
     schema,
     playground: { version: "1.7.25", endpoint: "/graphql" },
@@ -144,9 +152,10 @@ const main = async () => {
 
   const app = Express.default();
 
-  const whitelistedOrigins = nodeEnvIsProd
+  const allowedListOfOrigins = nodeEnvIsProd
     ? [
         `${process.env.PRODUCTION_CLIENT_ORIGIN}`,
+        `${process.env.PRODUCTION_API_ORIGIN}`,
         `${process.env.GRAPHQL_ENDPOINT}`,
       ]
     : [
@@ -159,7 +168,7 @@ const main = async () => {
   const corsOptions: CorsOptionsProps = {
     credentials: true,
     origin: function (origin: any, callback: any) {
-      if (!origin || whitelistedOrigins.indexOf(origin) !== -1) {
+      if (!origin || allowedListOfOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
         console.error("cors error:: origin: ", origin);
