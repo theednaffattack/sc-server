@@ -164,7 +164,7 @@ const main = async () => {
         "http://localhost:3000",
         "http://localhost:4000",
         `http://${homeIp}:3000`,
-        `http://${homeIp}:4000`,
+        `http://${homeIp}:${process.env.VIRTUAL_PORT}`,
       ];
 
   const corsOptions: CorsOptionsProps = {
