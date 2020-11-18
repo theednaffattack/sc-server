@@ -11,12 +11,12 @@ export class LogoutResolver {
     ctx: MyContext
   ): Promise<Boolean> {
     return new Promise((resolve, reject) => {
-      return ctx.req.session!.destroy(err => {
+      return ctx.req.session!.destroy((err) => {
         if (err) {
           console.error(err);
           return reject(false);
         }
-        ctx.res.clearCookie("scg");
+        ctx.res.clearCookie(process.env.COOKIE_NAME!);
 
         return resolve(true);
       });
