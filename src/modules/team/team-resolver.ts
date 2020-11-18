@@ -11,7 +11,7 @@ import {
   Field,
   Int,
   Args,
-  ObjectType
+  ObjectType,
 } from "type-graphql";
 import bcrypt from "bcryptjs";
 import { inspect } from "util";
@@ -108,14 +108,14 @@ export class UserTeamResolver {
     const getUser = await User.createQueryBuilder("user")
       .where("user.email = :email", { email: email })
       .getMany()
-      .then(data => {
+      .then((data) => {
         return data;
       })
-      .then(data => {
+      .then((data) => {
         let returnData = evalUser(data)[0];
         return returnData;
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(`Error fetching User data`, { err, getUserEval });
         throw Error(err);
       });
@@ -129,7 +129,7 @@ export class UserTeamResolver {
       .values({
         userId: getUser.id,
         teamRoleAuthorizations: roles,
-        teamId
+        teamId,
       })
       .execute();
 
@@ -148,7 +148,7 @@ export class UserTeamResolver {
       insertManually: insertManually?.raw,
       loadManually,
       roles,
-      loadUserManually
+      loadUserManually,
       // huh
     });
 
@@ -169,12 +169,12 @@ export class UserTeamResolver {
       .into("team")
       .values({ name })
       .execute()
-      .catch(error => {
+      .catch((error) => {
         const catchMessage = "duplicate key value violates unique constraint";
         console.error("CHECK ERROR\n", Object.keys(error));
         console.error("CHECK ERROR\n", {
           message: error.message,
-          checkStatus: error.message.includes(catchMessage)
+          checkStatus: error.message.includes(catchMessage),
         });
         if (error.message.includes(catchMessage)) {
           throw Error(
@@ -198,10 +198,10 @@ export class UserTeamResolver {
         .values({
           userId,
           teamRoleAuthorizations: [TeamRoleEnum.OWNER],
-          teamId: newTeam?.id
+          teamId: newTeam?.id,
         })
         .execute()
-        .catch(error => console.error(`${inspect(error, false, 4, true)}`));
+        .catch((error) => console.error(`${inspect(error, false, 4, true)}`));
 
       return newTeam;
     } else {
@@ -214,7 +214,7 @@ export class UserTeamResolver {
   async batchTeams() {
     const teamIds = [
       "f1b8f931-8bcc-471d-b6c3-db67acfda29a",
-      "4104ce49-06b2-4842-94b0-464f0e1f698e"
+      "4104ce49-06b2-4842-94b0-464f0e1f698e",
     ];
     console.log(
       "\nexampleTeamLoader",
@@ -254,7 +254,7 @@ export class UserTeamResolver {
         {
           teamId,
           teamMembers,
-          teamMembersAlso
+          teamMembersAlso,
           // teamMembersOld
         },
         false,
@@ -280,13 +280,13 @@ export class UserTeamResolver {
       .where("member.id = :userId", { userId })
       .getMany();
 
-    // BELOW IS WORKING
+    // BELOW IS *NOT* WORKING
     const getAllTeamsForUserToo = await UserToTeam.createQueryBuilder("utt")
       .select()
       .where("utt.userId = :userId", { userId })
       .leftJoinAndSelect("utt.team", "teams")
       .getMany()
-      .catch(error => {
+      .catch((error) => {
         throw Error(
           `Error loading UserToTeam\n${inspect(error, false, 4, true)}`
         );
@@ -294,7 +294,7 @@ export class UserTeamResolver {
 
     console.log("GET ALL TEAMS FOR USER", {
       getAllTeamsForUser,
-      getAllTeamsForUserToo
+      getAllTeamsForUserToo, // DAMN!!!
     });
     return getAllTeamsForUser;
   }
