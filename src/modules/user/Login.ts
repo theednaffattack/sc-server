@@ -35,7 +35,7 @@ export class LoginResolver {
 
     // all is well return the user we found
     ctx.req.session!.userId = user.id;
-    ctx.userId;
+    ctx.userId = user.id;
     return user;
   }
 }
