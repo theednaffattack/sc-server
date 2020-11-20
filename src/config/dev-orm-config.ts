@@ -3,12 +3,12 @@ import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConne
 export const devOrmconfig: PostgresConnectionOptions = {
   name: "default",
   type: "postgres",
-  host: "localhost",
+  host: "10.0.0.188",
   port: 5432,
   ssl: false,
-  username: "eddienaff",
-  password: "eddienaff",
-  database: "slack_clone",
+  username: process.env.POSTGRES_USER, // "eddienaff",
+  password: process.env.POSTGRES_PASS, // "eddienaff",
+  database: process.env.POSTGRES_DBNAME,
   logging: true,
   synchronize: true,
   entities: ["src/entity/**/*.*"],
@@ -17,6 +17,6 @@ export const devOrmconfig: PostgresConnectionOptions = {
   cli: {
     entitiesDir: "src/entity",
     migrationsDir: "src/migration",
-    subscribersDir: "src/subscriber"
-  }
+    subscribersDir: "src/subscriber",
+  },
 };
