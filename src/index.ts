@@ -16,6 +16,7 @@ import { createSchema } from "./global-utils/createSchema";
 import { devOrmconfig } from "./config/dev-orm-config";
 import { productionOrmConfig } from "./config/prod-orm-config";
 import { MyContext } from "./types/MyContext";
+import { runMigrations } from "./lib/util.prep-dev-database";
 // import { createUsersLoader } from "./modules/utils/data-loaders/batch-user-loader";
 
 interface CorsOptionsProps {
@@ -60,6 +61,32 @@ const main = async () => {
     await createConnection(ormConnection);
   } catch (error) {
     console.warn("CONNECTION ERROR", error);
+  }
+
+  let retries = 5;
+  // Loop to run migrations. Keep
+  // trying until
+  while (retries) {
+    try {
+      await runMigrations();
+      // If the migrations run successfully,
+      // exit the while loop.
+      break;
+    } catch (error) {
+      console.error("SOME KIND OF ERROR CONNECTING OCCURRED\n", {
+        error,
+        dirname: __dirname,
+        POSTGRES_DBNAME: process.env.POSTGRES_DBNAME,
+        POSTGRES_USER: process.env.POSTGRES_USER,
+        POSTGRES_PASS: process.env.POSTGRES_PASS,
+      });
+
+      retries -= 1;
+      // eslint-disable-next-line no-console
+      console.log(`\n\nRETRIES LEFT: ${retries}\n\n`);
+      // wait 5 seconds
+      setTimeout(() => console.log("TIMEOUT FIRING"), 5000);
+    }
   }
 
   let schema;
