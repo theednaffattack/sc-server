@@ -6,7 +6,7 @@ import {
   OneToMany,
   JoinTable,
   ManyToMany,
-  ManyToOne
+  ManyToOne,
 } from "typeorm";
 import { Field, ID, ObjectType, Root } from "type-graphql";
 import { registerEnumType } from "type-graphql";
@@ -25,7 +25,7 @@ import { FileEntity } from "./FileEntity";
 
 registerEnumType(TeamRoleEnum, {
   name: "TeamRoleEnum", // this one is mandatory
-  description: "admin | owner | member | public guest" // this one is optional
+  description: "admin | owner | member | public guest", // this one is optional
 });
 
 /**
@@ -52,6 +52,10 @@ export class User extends BaseEntity {
 
   @Field({ nullable: true })
   @Column("text", { unique: true })
+  username: string;
+
+  @Field({ nullable: true })
+  @Column("text", { unique: true })
   email: string;
 
   // @Field(() => UserTeamRole)
@@ -72,11 +76,7 @@ export class User extends BaseEntity {
   // teamRoles: Role[];
 
   @Field(() => Channel, { nullable: true })
-  @ManyToOne(
-    () => Channel,
-    channel => channel.created_by,
-    { nullable: true }
-  )
+  @ManyToOne(() => Channel, (channel) => channel.created_by, { nullable: true })
   channels_created?: Channel;
 
   // () => User,
@@ -85,39 +85,23 @@ export class User extends BaseEntity {
   // following: User[];
 
   @Field(() => [Image], { nullable: "itemsAndList" })
-  @OneToMany(
-    () => Image,
-    image => image.user,
-    { nullable: true }
-  )
+  @OneToMany(() => Image, (image) => image.user, { nullable: true })
   images: Image[];
 
   @Field(() => [FileEntity], { nullable: "itemsAndList" })
-  @OneToMany(
-    () => FileEntity,
-    file => file.upload_user,
-    { nullable: true }
-  )
+  @OneToMany(() => FileEntity, (file) => file.upload_user, { nullable: true })
   files: FileEntity[];
 
   @Field(() => [Message], { nullable: "itemsAndList" })
   mappedMessages: Message[];
 
   @Field(() => [User], { nullable: "itemsAndList" })
-  @ManyToMany(
-    () => User,
-    user => user.following,
-    { nullable: true }
-  )
+  @ManyToMany(() => User, (user) => user.following, { nullable: true })
   @JoinTable()
   followers: User[];
 
   @Field(() => [User], { nullable: "itemsAndList" })
-  @ManyToMany(
-    () => User,
-    user => user.followers,
-    { nullable: true }
-  )
+  @ManyToMany(() => User, (user) => user.followers, { nullable: true })
   following: User[];
 
   // easier way of doing many-to-many
@@ -126,27 +110,16 @@ export class User extends BaseEntity {
   teams: Team[];
 
   @Field(() => [Thread], { nullable: true })
-  @OneToMany(
-    () => Thread,
-    thread => thread.user
-  )
+  @OneToMany(() => Thread, (thread) => thread.user)
   threads: Thread[];
 
   @Field(() => [Thread], { nullable: "itemsAndList" })
-  @ManyToMany(
-    () => Thread,
-    thread => thread.invitees,
-    { nullable: true }
-  )
+  @ManyToMany(() => Thread, (thread) => thread.invitees, { nullable: true })
   @JoinTable()
   thread_invitations: Thread[];
 
   @Field(() => [Channel], { nullable: "itemsAndList" })
-  @ManyToMany(
-    () => Channel,
-    channel => channel.invitees,
-    { nullable: true }
-  )
+  @ManyToMany(() => Channel, (channel) => channel.invitees, { nullable: true })
   @JoinTable()
   channel_memberships: Channel[];
 
@@ -160,10 +133,7 @@ export class User extends BaseEntity {
   }
 
   @Field()
-  @OneToMany(
-    () => Team,
-    team => team.owner
-  )
+  @OneToMany(() => Team, (team) => team.owner)
   team_ownership: string;
 
   @Column()
@@ -173,24 +143,15 @@ export class User extends BaseEntity {
   confirmed: boolean;
 
   @Field(() => [Message], { nullable: true })
-  @OneToMany(
-    () => Message,
-    message => message.user
-  )
+  @OneToMany(() => Message, (message) => message.user)
   messages?: Message[];
 
   @Field(() => [Message], { nullable: true })
-  @OneToMany(
-    () => Message,
-    message => message.sentBy
-  )
+  @OneToMany(() => Message, (message) => message.sentBy)
   sent_messages: Message[];
 
   @Field(() => [UserToTeam], { nullable: true })
-  @OneToMany(
-    () => UserToTeam,
-    userToTeam => userToTeam.team
-  )
+  @OneToMany(() => UserToTeam, (userToTeam) => userToTeam.team)
   userToTeams: UserToTeam[];
 }
 

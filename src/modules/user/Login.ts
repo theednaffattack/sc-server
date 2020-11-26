@@ -10,11 +10,11 @@ export class LoginResolver {
   @UseMiddleware(loggerMiddleware)
   @Mutation(() => User, { nullable: true })
   async login(
-    @Arg("email") email: string,
+    @Arg("username") username: string,
     @Arg("password") password: string,
     @Ctx() ctx: MyContext
   ): Promise<User | null> {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { username } });
     // if we can't find a user return an obscure result (null) to prevent fishing
     if (!user) {
       return null;

@@ -18,14 +18,15 @@ export class RegisterResolver {
   @Mutation(() => User)
   async register(
     @Arg("data")
-    { email, firstName, lastName, password }: RegisterInput
+    { email, firstName, lastName, password, username }: RegisterInput
   ): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = await User.create({
       firstName,
       lastName,
       email,
-      password: hashedPassword
+      username,
+      password: hashedPassword,
     }).save();
 
     await sendEmail(email, await createConfirmationUrl(user.id));
