@@ -77,7 +77,7 @@ export class UserTeamResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
   @Authorized("ADMIN", "OWNER")
   @Mutation(() => UserToTeamIdReferencesOnlyClass)
-  async addTeamMember(
+  async addTeamMemberByEmail(
     @Arg("email", () => String) email: string,
     @Arg("teamId", () => String) teamId: string,
     @Arg("roles", () => [TeamRoleEnum]) roles: TeamRoleEnum[]
@@ -153,6 +153,87 @@ export class UserTeamResolver {
     });
 
     return loadUserManually;
+  }
+
+  @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER")
+  @Mutation(() => UserToTeamIdReferencesOnlyClass)
+  async addTeamMemberById(
+    @Arg("userId", () => String) userId: string,
+    @Arg("teamId", () => String) teamId: string,
+    @Arg("roles", () => [TeamRoleEnum]) roles: TeamRoleEnum[]
+  ): Promise<UserToTeamIdReferencesOnly> {
+    console.log("CHECK USER FETCH 1", { userId, teamId, roles });
+
+    // evaluate fetch result
+    let getUserEval: GetUserIsEmptyType = "initial_value";
+
+    // evaluate the data to make sure only one user is returned
+    function evalUser(data: User[]): User[] {
+      if (data.length > 1) {
+        getUserEval = "more_than_one_user_found";
+        throw Error(`Error: More than one user contains this email address!`);
+      }
+      if (data.length === 0) {
+        getUserEval = "user_is_empty";
+        return data;
+      }
+      if (data.length === 1) {
+        getUserEval = "user_is_correctly_sized";
+        return data;
+      }
+      throw Error("Nothing to return");
+    }
+
+    // check to see if we have the user in our DB
+    const getUser = await User.createQueryBuilder("user")
+      .where("user.id = :userId", { userId })
+      .getMany()
+      .then((data) => {
+        return data;
+      })
+      .then((data) => {
+        let returnData = evalUser(data)[0];
+        return returnData;
+      })
+      .catch((err) => {
+        console.log(`Error fetching User data`, { err, getUserEval });
+        throw Error(err);
+      });
+
+    console.log("CHECK USER FETCH 1", { getUser, roles, getUserEval });
+
+    let insertManually;
+
+    insertManually = await UserToTeam.createQueryBuilder("utt")
+      .insert()
+      .values({
+        userId: getUser.id,
+        teamRoleAuthorizations: roles,
+        teamId,
+      })
+      .execute();
+
+    const [loadManually] = await Team.createQueryBuilder("team")
+      .relation("team", "userToTeams")
+      .of(getUser.id) // you can use just post id as well
+      .loadMany();
+
+    const [loadUserManually] = await User.createQueryBuilder("user")
+      .relation("user", "userToTeams")
+      .of(teamId)
+      .loadMany();
+
+    console.log("CHECK USER FETCH 2", {
+      userId,
+      insertManually: insertManually?.raw,
+      loadManually,
+      roles,
+      loadUserManually,
+      // huh
+    });
+
+    return loadManually;
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
@@ -267,8 +348,10 @@ export class UserTeamResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Query(() => [Team])
-  async getAllTeamsForUser(@Ctx() { userId }: MyContext): Promise<Team[]> {
+  @Query(() => [UserToTeam])
+  async getAllTeamsForUser(
+    @Ctx() { userId }: MyContext
+  ): Promise<UserToTeam[]> {
     const getAllTeamsForUser = await Team.createQueryBuilder("team")
       .select()
       .leftJoinAndSelect("team.members", "member")
@@ -296,7 +379,9 @@ export class UserTeamResolver {
       getAllTeamsForUser,
       getAllTeamsForUserToo, // DAMN!!!
     });
-    return getAllTeamsForUser;
+    console.log(inspect(getAllTeamsForUserToo, false, 3, true));
+
+    return getAllTeamsForUserToo;
   }
 
   @UseMiddleware(loggerMiddleware)
