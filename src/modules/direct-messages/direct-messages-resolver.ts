@@ -9,7 +9,7 @@ import {
   Root,
   PubSub,
   Publisher,
-  Query
+  Query,
 } from "type-graphql";
 
 import { isAuth } from "../middleware/isAuth";
@@ -26,7 +26,7 @@ import { Team } from "../../entity/Team";
 
 enum Topic {
   NewDirectMessage = "NEW_DIRECT_MESSAGE",
-  NewRecipe = "NEW_RECIPE"
+  NewRecipe = "NEW_RECIPE",
 }
 
 // ADDITIONAL RESOLVERS NEEDED:
@@ -46,7 +46,7 @@ export class DirectMessageResolver {
     topics: [Topic.NewDirectMessage],
     filter: () => {
       return true;
-    }
+    },
   })
   newDirectMessageSub(
     @Root() directMessagePayload: AddDirectMessagePayloadType
@@ -55,7 +55,7 @@ export class DirectMessageResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Authorized("ADMIN", "OWNER", "MEMBER")
+  @Authorized("MEMBER", "OWNER", "ADMIN")
   @Mutation(() => AddDirectMessagePayload)
   async addDirectMessageToThread(
     @Ctx() { userId }: MyContext,
@@ -64,7 +64,7 @@ export class DirectMessageResolver {
       // teamId,
       threadId,
       message_text,
-      invitees
+      invitees,
     }: AddDirectMessageToThreadInput,
     @PubSub(Topic.NewDirectMessage)
     publish: Publisher<AddDirectMessagePayloadType>
@@ -74,7 +74,7 @@ export class DirectMessageResolver {
       .values([{ message: message_text, sentBy: { id: userId } }])
       .execute();
 
-    let updateThreadLastMessage = await Thread.createQueryBuilder("thread")
+    await Thread.createQueryBuilder("thread")
       .update("thread")
       .set({ last_message: message_text })
       .where("thread.id = :threadId", { threadId })
@@ -84,8 +84,8 @@ export class DirectMessageResolver {
 
     let {
       id: idMessage,
-      created_at: createdAtMessage,
-      updated_at: updatedAtMessage
+      // created_at: createdAtMessage,
+      // updated_at: updatedAtMessage,
     } = propMessage;
 
     let dmInvitees = await User.createQueryBuilder("user")
@@ -94,13 +94,12 @@ export class DirectMessageResolver {
 
     await Promise.all(
       // add the message to each user
-      dmInvitees.map(async (userObj, index) => {
-        console.log(`FOR USER ${userObj.name} index=${index}`);
+      dmInvitees.map(async (userObj) => {
         return await User.createQueryBuilder("user")
           .relation("user", "messages")
           .of(userObj)
           .add(idMessage)
-          .catch(error => console.error(error));
+          .catch((error) => console.error(error));
       })
     );
 
@@ -109,14 +108,14 @@ export class DirectMessageResolver {
       .relation("thread", "messages")
       .of(threadId)
       .add(idMessage) // use add rather than set for ONE TO MANY AND MANY TO MANY
-      .catch(error => console.error(error));
+      .catch((error) => console.error(error));
 
     // add thread to message // MANY TO ONE
     await Message.createQueryBuilder("message")
       .relation("message", "thread")
       .of(idMessage) // you can use just post id as well
       .set(threadId) // you can use just category id as well // use set for MANY TO ONE AND ONE TO ONE
-      .catch(error => console.error(error));
+      .catch((error) => console.error(error));
 
     let fullNewMessage = await Message.createQueryBuilder("message")
       .leftJoinAndSelect("message.sentBy", "sentBy")
@@ -125,22 +124,11 @@ export class DirectMessageResolver {
 
     if (fullNewMessage) {
       await publish({
-        invitees: dmInvitees.map(person => person.id),
+        invitees: dmInvitees.map((person) => person.id),
         message: fullNewMessage,
         success: true,
         threadId: threadId,
-        sentBy: fullNewMessage.sentBy
-      });
-
-      console.log("WHAT'S COMING BACK? - CHECK ARGS", {
-        threadId,
-        fullNewMessage,
-        rawMessage,
-        idMessage,
-        createdAtMessage,
-        updatedAtMessage,
-        dmInvitees,
-        updateThreadLastMessage
+        sentBy: fullNewMessage.sentBy,
       });
 
       return {
@@ -148,7 +136,7 @@ export class DirectMessageResolver {
         message: fullNewMessage,
         success: true,
         threadId,
-        sentBy: fullNewMessage.sentBy
+        sentBy: fullNewMessage.sentBy,
       };
     } else {
       throw Error("Nothing saved");
@@ -179,13 +167,13 @@ export class DirectMessageResolver {
 
     let {
       id: idThread,
-      created_at: createdAtThread,
-      updated_at: updatedAtThread
+      // created_at: createdAtThread,
+      // updated_at: updatedAtThread,
     } = propThread;
     let {
       id: idMessage,
-      created_at: createdAtMessage,
-      updated_at: updatedAtMessage
+      // created_at: createdAtMessage,
+      // updated_at: updatedAtMessage,
     } = propMessage;
 
     let dmInvitees = await User.createQueryBuilder("user")
@@ -194,13 +182,12 @@ export class DirectMessageResolver {
 
     await Promise.all(
       // add the message to each user
-      dmInvitees.map(async (userObj, index) => {
-        console.log(`FOR USER ${userObj.name} index=${index}`);
+      dmInvitees.map(async (userObj) => {
         return await User.createQueryBuilder("user")
           .relation("user", "messages")
           .of(userObj)
           .add(idMessage)
-          .catch(error => console.error(error));
+          .catch((error) => console.error(error));
       })
     );
 
@@ -209,14 +196,14 @@ export class DirectMessageResolver {
       .relation("thread", "messages")
       .of(idThread)
       .add(idMessage) // use add rather than set for ONE TO MANY AND MANY TO MANY
-      .catch(error => console.error(error));
+      .catch((error) => console.error(error));
 
     // add Team to Thread // MANY TO ONE
     await Thread.createQueryBuilder("thread")
       .relation("thread", "team")
       .of(idThread)
       .set(teamId) // use set for MANY TO ONE AND ONE TO ONE
-      .catch(error => console.error(error));
+      .catch((error) => console.error(error));
 
     // // add Team to Thread // ONE TO MANY
     // await Team.createQueryBuilder("team")
@@ -234,26 +221,26 @@ export class DirectMessageResolver {
       .relation("thread", "invitees")
       .of(idThread)
       .add(invitees) // use add rather than set for ONE TO MANY AND MANY TO MANY
-      .catch(error => console.error(error));
+      .catch((error) => console.error(error));
 
     // add thread to message // MANY TO ONE
     await Message.createQueryBuilder("message")
       .relation("message", "thread")
       .of(idMessage) // you can use just post id as well
       .set(idThread) // you can use just category id as well // use set for MANY TO ONE AND ONE TO ONE
-      .catch(error => console.error(error));
+      .catch((error) => console.error(error));
 
     let fullNewMessage = await Message.createQueryBuilder("message")
       .leftJoinAndSelect("message.sentBy", "sentBy")
       .where("message.id = :messageId", { messageId: idMessage })
       .getOne();
 
-    let fullNewThread = await Thread.createQueryBuilder("thread")
+    await Thread.createQueryBuilder("thread")
       .leftJoinAndSelect("thread.team", "team")
       .where("thread.id = :threadId", { threadId: idThread })
       .getOne();
 
-    let fullNewTeam = await Team.createQueryBuilder("team")
+    await Team.createQueryBuilder("team")
       .leftJoinAndSelect("team.threads", "thread")
       .where("team.id = :teamId", { teamId: teamId })
       .getOne();
@@ -273,22 +260,7 @@ export class DirectMessageResolver {
         message: fullNewMessage,
         success: true,
         threadId: idThread,
-        sentBy
-      });
-
-      console.log("WHAT'S COMING BACK? - CHECK ARGS", {
-        rawThread,
-        idThread,
-        fullNewMessage,
-        fullNewThread,
-        fullNewTeam,
-        createdAtThread,
-        updatedAtThread,
-        rawMessage,
-        idMessage,
-        createdAtMessage,
-        updatedAtMessage,
-        dmInvitees
+        sentBy,
       });
 
       return {
@@ -296,7 +268,7 @@ export class DirectMessageResolver {
         message: fullNewMessage,
         success: true,
         threadId: idThread,
-        sentBy
+        sentBy,
       };
     } else {
       throw Error("Nothing saved");
@@ -327,6 +299,7 @@ export class DirectMessageResolver {
   @Query(() => Thread)
   async loadDirectMessagesThreadById(
     @Arg("threadId") threadId: string,
+    //@ts-ignore
     @Arg("teamId") teamId: string
   ): Promise<Thread> {
     let getDirectMessagesByThreadId = await Thread.createQueryBuilder("thread")
@@ -336,18 +309,12 @@ export class DirectMessageResolver {
       .leftJoinAndSelect("messages.sentBy", "sentBy")
       .where("thread.id = :threadId", { threadId })
       .getOne()
-      .catch(error =>
+      .catch((error) =>
         console.error(
           `ERROR FETCHING THREAD MESSAGES (THREAD ID: ${threadId})`,
           error
         )
       );
-
-    console.log(
-      "VIEW getDirectMessagesByThreadId",
-      getDirectMessagesByThreadId,
-      teamId
-    );
 
     if (getDirectMessagesByThreadId) {
       return getDirectMessagesByThreadId;
@@ -363,8 +330,6 @@ export class DirectMessageResolver {
     @Arg("teamId") teamId: String,
     @Ctx() ctx: MyContext
   ): Promise<Thread[]> {
-    console.log("RUNNING LOAD DIRECT MESSAGE THREADS BY TEAM AND USER");
-
     const loadedThreads = await Thread.createQueryBuilder("thread")
       .leftJoinAndSelect("thread.invitees", "invitee")
       .leftJoinAndSelect("thread.invitees", "inviteeReal")
@@ -373,7 +338,7 @@ export class DirectMessageResolver {
       .where("invitee.id IN (:...userId)", { userId: [ctx.userId] })
       .andWhere("team.id = :teamId", { teamId })
       .getMany();
-    console.log("VIEW LOADED THREADS", { teamId, loadedThreads });
+
     return loadedThreads;
   }
 }
