@@ -11,7 +11,7 @@ import {
   Root,
   PubSub,
   Publisher,
-  ResolverFilterData
+  ResolverFilterData,
   // Args
 } from "type-graphql";
 
@@ -34,7 +34,7 @@ import { inspect } from "util";
 
 enum Topic {
   NewChannelMessage = "NEW_CHANNEL_MESSAGE",
-  NewRecipe = "NEW_RECIPE"
+  NewRecipe = "NEW_RECIPE",
 }
 
 // ADDITIONAL RESOLVERS NEEDED:
@@ -58,7 +58,7 @@ export class ChannelResolver {
     topics: [Topic.NewChannelMessage],
     filter: ({
       args,
-      payload
+      payload,
     }: ResolverFilterData<
       IAddMessagePayload,
       DataAddMessageToChannelInput
@@ -72,7 +72,7 @@ export class ChannelResolver {
       }
 
       // return true;
-    }
+    },
   })
   newMessageSub(
     @Root() messagePayload: AddMessagePayload,
@@ -81,7 +81,7 @@ export class ChannelResolver {
     console.log("NEW MESSAGE SUB, MESSAGE PAYLOAD", {
       data,
       messagePayload,
-      messagePayload_created_at: messagePayload.message.created_at
+      messagePayload_created_at: messagePayload.message.created_at,
     });
 
     // let returnObj = {
@@ -141,7 +141,7 @@ export class ChannelResolver {
         files: files,
         message: message,
         receiver,
-        sentBy
+        sentBy,
       });
 
       console.log(
@@ -165,7 +165,7 @@ export class ChannelResolver {
         channelId,
         message,
         receiver,
-        sentBy
+        sentBy,
       });
 
       await publish(returnObj).catch((error: Error) => {
@@ -362,16 +362,23 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Authorized("ADMIN", "OWNER", "MEMBER")
+  // @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Boolean)
   async addChannelMember(
-    @Arg("userId", () => ID) userId: string,
+    @Ctx() context: MyContext,
+
+    @Arg("userId", () => String) userId: string,
     @Arg("channelId", () => String) channelId: string
   ) {
+    console.log("USER ID (addChannelMember)", {
+      ctxUser: context.userId,
+      argUser: userId,
+    });
+
     const getUser = await User.createQueryBuilder("user")
       .where("user.id = :id", { id: userId })
       .getOne()
-      .catch(err => {
+      .catch((err) => {
         throw Error(err);
       });
 
@@ -392,7 +399,7 @@ export class ChannelResolver {
           addMemberResult = failureMessage;
         }
       )
-      .catch(err => {
+      .catch((err) => {
         throw Error(err);
       });
 
@@ -413,7 +420,7 @@ export class ChannelResolver {
     const getUser = await User.createQueryBuilder("user")
       .where("user.id = :id", { id: userId })
       .getOne()
-      .catch(err => {
+      .catch((err) => {
         throw Error(err);
       });
 
@@ -430,13 +437,13 @@ export class ChannelResolver {
           () => (deleteMember = successMessage),
           () => (deleteMember = failureMessage)
         )
-        .catch(err => {
+        .catch((err) => {
           deleteMember = "deletion error";
           console.error("Error deleting channel member", err);
         });
     }
 
-    "deletion rejected";
+    ("deletion rejected");
 
     if (deleteMember === successMessage) {
       return true;
@@ -461,7 +468,7 @@ export class ChannelResolver {
     console.log("WHAT'S COMING BACK? - CHECK ARGS", {
       existingTeam,
       name,
-      teamId
+      teamId,
     });
 
     const { raw } = await Channel.createQueryBuilder("channel")
@@ -557,7 +564,7 @@ export class ChannelResolver {
       .set({ name })
       .where("id = :id", { id: channelId })
       .execute()
-      .catch(error => new Error(error));
+      .catch((error) => new Error(error));
 
     console.log("updatedChannelName".toUpperCase(), updatedChannelName);
     if (updatedChannelName) {
