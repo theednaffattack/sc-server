@@ -81,11 +81,6 @@ function examineFetchReturn(
   }
 
   const findDataForThisTeamId = data.filter((item) => {
-    console.log("ITEM", {
-      teamId,
-      item: item.teamId,
-      match: item.teamId === teamId,
-    });
     return item.teamId === teamId;
   });
 
