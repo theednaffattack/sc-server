@@ -13,8 +13,8 @@ export class AddMessageToChannelInput {
   @Field(() => Date, { nullable: true })
   created_at: Date;
 
-  @Field(() => String)
-  sentTo: string;
+  // @Field(() => String)
+  // sentTo: string;
 
   @Field(() => [ID], { nullable: "itemsAndList" })
   invitees?: string[];
