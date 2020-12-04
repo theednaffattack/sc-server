@@ -7,13 +7,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToMany,
-  Column
+  Column,
 } from "typeorm";
 import { Field, ID, ObjectType, Int } from "type-graphql";
 
 import { User } from "./User";
 import { Message } from "./Message";
 import { Team } from "./Team";
+import { Channel } from "./Channel";
 
 @ObjectType()
 @Entity()
@@ -23,10 +24,7 @@ export class Thread extends BaseEntity {
   id: string;
 
   @Field(() => [Message], { nullable: "itemsAndList" })
-  @OneToMany(
-    () => Message,
-    message => message.thread
-  )
+  @OneToMany(() => Message, (message) => message.thread)
   messages?: Message[];
 
   @Field(() => String, { nullable: true })
@@ -37,25 +35,20 @@ export class Thread extends BaseEntity {
   message_count?: number;
 
   @Field(() => User, { nullable: false })
-  @ManyToOne(
-    () => User,
-    user => user.threads
-  )
+  @ManyToOne(() => User, (user) => user.threads)
   user: User;
 
   @Field(() => Team, { nullable: true })
-  @ManyToOne(
-    () => Team,
-    team => team.threads
-  )
+  @ManyToOne(() => Team, (team) => team.threads)
   team: Team;
 
   @Field(() => [User], { nullable: false })
-  @ManyToMany(
-    () => User,
-    user => user.thread_invitations
-  )
+  @ManyToMany(() => User, (user) => user.thread_invitations)
   invitees: User[];
+
+  @Field(() => Channel, { nullable: true })
+  @ManyToOne(() => Channel, (channel) => channel.threads)
+  channel: Channel;
 
   @Field(() => Date, { nullable: true })
   @CreateDateColumn({ type: "timestamp" })

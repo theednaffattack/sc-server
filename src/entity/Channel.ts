@@ -9,7 +9,7 @@ import {
   // ManyToMany,
   Column,
   ManyToMany,
-  ManyToOne
+  ManyToOne,
 } from "typeorm";
 import { Field, ID, ObjectType, Int } from "type-graphql";
 
@@ -17,6 +17,7 @@ import { Field, ID, ObjectType, Int } from "type-graphql";
 import { Message } from "./Message";
 import { Team } from "./Team";
 import { User } from "./User";
+import { Thread } from "./Thread";
 
 @ObjectType()
 @Entity()
@@ -30,10 +31,7 @@ export class Channel extends BaseEntity {
   name: string;
 
   @Field(() => [Message], { nullable: "itemsAndList" })
-  @OneToMany(
-    () => Message,
-    message => message.channel
-  )
+  @OneToMany(() => Message, (message) => message.channel)
   messages?: Message[];
 
   @Field(() => String, { nullable: true })
@@ -46,7 +44,7 @@ export class Channel extends BaseEntity {
   @Field(() => Boolean, {
     nullable: true,
     description:
-      "Determines whether this channel is viewable to the public. (default = false)"
+      "Determines whether this channel is viewable to the public. (default = false)",
   })
   @Column({ default: false })
   public?: boolean;
@@ -59,25 +57,19 @@ export class Channel extends BaseEntity {
   // team: Team;
 
   @Field(() => Team, { nullable: false })
-  @ManyToOne(
-    () => Team,
-    team => team.channels
-  )
+  @ManyToOne(() => Team, (team) => team.channels)
   team: [Channel];
 
   @Field(() => [User], { nullable: "itemsAndList" })
-  @ManyToMany(
-    () => User,
-    user => user.channel_memberships
-  )
+  @ManyToMany(() => User, (user) => user.channel_memberships)
   invitees: User[];
 
+  @Field(() => [Thread], { nullable: "itemsAndList" })
+  @OneToMany(() => Thread, (thread) => thread.channel)
+  threads: Thread[];
+
   @Field(() => User, { nullable: false })
-  @OneToMany(
-    () => User,
-    user => user.channels_created,
-    { nullable: false }
-  )
+  @OneToMany(() => User, (user) => user.channels_created, { nullable: false })
   created_by: User;
 
   @Field(() => Date, { nullable: true })
