@@ -16,8 +16,8 @@ export class AddMessageToChannelInput {
   // @Field(() => String)
   // sentTo: string;
 
-  @Field(() => [ID], { nullable: "itemsAndList" })
-  invitees?: string[];
+  @Field(() => [ID])
+  invitees: string[];
 
   @Field(() => String)
   message: string;
