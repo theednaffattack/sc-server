@@ -14,6 +14,7 @@ import {
   ResolverFilterData,
   // Args
 } from "type-graphql";
+import { inspect } from "util";
 
 import { User } from "../../entity/User";
 import { Channel } from "../../entity/Channel";
@@ -30,7 +31,8 @@ import { AddChannelInput } from "./add-channel-input";
 import { IAddMessagePayload } from "./add-message-to-channel";
 import { createFile } from "./channel-helpers/create-file";
 import { createMessageWithoutFile } from "./channel-helpers/create-message-without-file";
-import { inspect } from "util";
+import { Thread } from "../../entity/Thread";
+// import { AddDirectMessagePayloadType } from "../direct-messages/direct-messages-resolver";
 
 enum Topic {
   NewChannelMessage = "NEW_CHANNEL_MESSAGE",
@@ -46,6 +48,15 @@ export interface AddChannelPayloadType {
   message: Message;
   user: User;
   invitees: User[];
+}
+
+export interface AddChannelMessagePayloadType {
+  success: boolean;
+  channelId: string;
+  threadId: string;
+  message: Message;
+  sentBy: User;
+  invitees: User["id"][];
 }
 
 export interface DataAddMessageToChannelInput {
@@ -178,6 +189,158 @@ export class ChannelResolver {
     throw Error(
       `unable to find sender or receiver / sender / image: ${sentBy}\nreceiver: ${receiver}`
     );
+  }
+
+  @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
+  @Mutation(() => AddMessagePayload)
+  async addThreadToChannel(
+    @Ctx() { userId }: MyContext,
+    @Arg("data")
+    {
+      channelId,
+      invitees,
+      teamId,
+      // files,
+      message: message_text,
+    }: AddMessageToChannelInput,
+
+    @PubSub(Topic.NewChannelMessage)
+    publish: Publisher<AddChannelMessagePayloadType>
+  ) {
+    // Create a new Thread
+    let { raw: rawThread } = await Thread.createQueryBuilder("thread")
+      .insert()
+      .values([{ last_message: message_text }])
+      .execute();
+
+    // Create a new Message as well
+    let { raw: rawMessage } = await Message.createQueryBuilder("message")
+      .insert()
+      .values([{ message: message_text, sentBy: { id: userId } }])
+      .execute();
+
+    let [propThread] = rawThread;
+
+    let [propMessage] = rawMessage;
+
+    // Add our new Thread into the existing Channel
+    await Channel.createQueryBuilder("channel")
+      .relation("channel", "threads")
+      .of(channelId)
+      .add(propThread.id)
+      .catch((error) => console.error(error));
+
+    let {
+      id: idThread,
+      // created_at: createdAtThread,
+      // updated_at: updatedAtThread,
+    } = propThread;
+    let {
+      id: idMessage,
+      // created_at: createdAtMessage,
+      // updated_at: updatedAtMessage,
+    } = propMessage;
+
+    let dmInvitees = await User.createQueryBuilder("user")
+      .where("user.id IN (:...userIds)", { userIds: [...invitees] })
+      .getMany();
+
+    await Promise.all(
+      // add the message to each user
+      dmInvitees.map(async (userObj) => {
+        return await User.createQueryBuilder("user")
+          .relation("user", "messages")
+          .of(userObj)
+          .add(idMessage)
+          .catch((error) => console.error(error));
+      })
+    );
+
+    // add message to thread // ONE TO MANY
+    await Thread.createQueryBuilder("thread")
+      .relation("thread", "messages")
+      .of(idThread)
+      .add(idMessage) // use add rather than set for ONE TO MANY AND MANY TO MANY
+      .catch((error) => console.error(error));
+
+    // add Team to Thread // MANY TO ONE
+    await Thread.createQueryBuilder("thread")
+      .relation("thread", "team")
+      .of(idThread)
+      .set(teamId) // use set for MANY TO ONE AND ONE TO ONE
+      .catch((error) => console.error(error));
+
+    // // add Team to Thread // ONE TO MANY
+    // await Team.createQueryBuilder("team")
+    //   .relation("team", "threads")
+    //   .of(teamId)
+    //   .add(idThread) // use add rather than set for ONE TO MANY AND MANY TO MANY
+    //   .then(data => {
+    //     console.log("// add Team to Thread // ONE TO MANY", data);
+    //     return data;
+    //   })
+    //   .catch(error => console.error(error));
+
+    // add invitees to thread // MANY TO MANY
+    await Thread.createQueryBuilder("thread")
+      .relation("thread", "invitees")
+      .of(idThread)
+      .add(invitees) // use add rather than set for ONE TO MANY AND MANY TO MANY
+      .catch((error) => console.error(error));
+
+    // add thread to message // MANY TO ONE
+    await Message.createQueryBuilder("message")
+      .relation("message", "thread")
+      .of(idMessage) // you can use just post id as well
+      .set(idThread) // you can use just category id as well // use set for MANY TO ONE AND ONE TO ONE
+      .catch((error) => console.error(error));
+
+    let fullNewMessage = await Message.createQueryBuilder("message")
+      .leftJoinAndSelect("message.sentBy", "sentBy")
+      .where("message.id = :messageId", { messageId: idMessage })
+      .getOne();
+
+    await Thread.createQueryBuilder("thread")
+      .leftJoinAndSelect("thread.team", "team")
+      .where("thread.id = :threadId", { threadId: idThread })
+      .getOne();
+
+    await Team.createQueryBuilder("team")
+      .leftJoinAndSelect("team.threads", "thread")
+      .where("team.id = :teamId", { teamId: teamId })
+      .getOne();
+
+    // fullNewMessage.sentBy = Message.createQueryBuilder("message")
+    //   .relation("message", "sentBy")
+    //   .of(idMessage)
+    //   .loadOne();
+
+    let sentBy = await User.createQueryBuilder("user")
+      .where("user.id = :userId", { userId })
+      .getOne();
+
+    if (fullNewMessage && sentBy) {
+      await publish({
+        invitees: dmInvitees.map(({ id }) => id),
+        channelId,
+        message: fullNewMessage,
+        success: true,
+        threadId: idThread,
+        sentBy,
+      });
+
+      return {
+        invitees: dmInvitees,
+        channelId,
+        message: fullNewMessage,
+        success: true,
+        threadId: idThread,
+        sentBy,
+      };
+    } else {
+      throw Error("Nothing saved");
+    }
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
@@ -369,6 +532,30 @@ export class ChannelResolver {
     } else {
       return [];
     }
+  }
+
+  @UseMiddleware(isAuth, loggerMiddleware)
+  @Authorized("ADMIN", "OWNER", "MEMBER")
+  @Query(() => [Thread])
+  async getAllChannelThreads(
+    @Arg("channelId", () => String, { nullable: true }) channelId: string,
+    @Arg("teamId", () => String, { nullable: true }) teamId: string
+  ): Promise<Thread[]> {
+    console.log("TEAM ID", teamId);
+
+    const getThreads = await Thread.createQueryBuilder("thread")
+      .leftJoinAndSelect("thread.channel", "channel")
+      .leftJoinAndSelect("thread.team", "team")
+      .leftJoinAndSelect("thread.invitees", "invitees")
+      .leftJoinAndSelect("thread.messages", "messages")
+      // .leftJoinAndSelect("messages.sentBy", "sentBy")
+
+      .orderBy("thread.created_at", "ASC")
+      .where("channel.id = :channelId", { channelId })
+      .andWhere("team.id = :teamId", { teamId })
+      .getMany();
+
+    return getThreads;
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
