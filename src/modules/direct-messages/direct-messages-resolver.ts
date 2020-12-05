@@ -332,11 +332,13 @@ export class DirectMessageResolver {
   ): Promise<Thread[]> {
     const loadedThreads = await Thread.createQueryBuilder("thread")
       .leftJoinAndSelect("thread.invitees", "invitee")
+      .leftJoinAndSelect("thread.channel", "channel")
       .leftJoinAndSelect("thread.invitees", "inviteeReal")
       .leftJoinAndSelect("thread.team", "team")
       .leftJoinAndSelect("thread.messages", "message")
       .where("invitee.id IN (:...userId)", { userId: [ctx.userId] })
       .andWhere("team.id = :teamId", { teamId })
+      .andWhere("channel IS NULL")
       .getMany();
 
     return loadedThreads;
