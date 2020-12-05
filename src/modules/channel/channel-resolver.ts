@@ -535,7 +535,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Authorized("ADMIN", "OWNER", "MEMBER")
+  // @Authorized("ADMIN", "OWNER", "MEMBER")
   @Query(() => [Thread])
   async getAllChannelThreads(
     @Arg("channelId", () => String, { nullable: true }) channelId: string,
