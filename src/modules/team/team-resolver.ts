@@ -375,12 +375,6 @@ export class UserTeamResolver {
         );
       });
 
-    console.log("GET ALL TEAMS FOR USER", {
-      getAllTeamsForUser,
-      getAllTeamsForUserToo, // DAMN!!!
-    });
-    console.log(inspect(getAllTeamsForUserToo, false, 3, true));
-
     return getAllTeamsForUserToo;
   }
 
