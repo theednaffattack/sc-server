@@ -32,6 +32,7 @@ import { IAddMessagePayload } from "./add-message-to-channel";
 import { createFile } from "./channel-helpers/create-file";
 import { createMessageWithoutFile } from "./channel-helpers/create-message-without-file";
 import { Thread } from "../../entity/Thread";
+import { AddThreadPayload } from "./add-thread-payload";
 // import { AddDirectMessagePayloadType } from "../direct-messages/direct-messages-resolver";
 
 enum Topic {
@@ -193,7 +194,7 @@ export class ChannelResolver {
 
   @UseMiddleware(isAuth, loggerMiddleware)
   @Authorized("ADMIN", "OWNER", "MEMBER")
-  @Mutation(() => AddMessagePayload)
+  @Mutation(() => AddThreadPayload)
   async addThreadToChannel(
     @Ctx() { userId }: MyContext,
     @Arg("data")
@@ -206,8 +207,8 @@ export class ChannelResolver {
     }: AddMessageToChannelInput,
 
     @PubSub(Topic.NewChannelMessage)
-    publish: Publisher<AddChannelMessagePayloadType>
-  ) {
+    publish: Publisher<AddThreadPayload>
+  ): Promise<AddThreadPayload> {
     // Create a new Thread
     let { raw: rawThread } = await Thread.createQueryBuilder("thread")
       .insert()
@@ -322,7 +323,7 @@ export class ChannelResolver {
 
     if (fullNewMessage && sentBy) {
       await publish({
-        invitees: dmInvitees.map(({ id }) => id),
+        invitees: dmInvitees,
         channelId,
         message: fullNewMessage,
         success: true,
@@ -438,10 +439,10 @@ export class ChannelResolver {
   @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Channel)
   async createChannel(
-    @Arg("input") { teamId, name }: AddChannelInput
+    @Arg("input") { teamId, name }: AddChannelInput,
+    @Ctx() { userId }: MyContext
   ): // @Arg("name", () => String) name: string,
   // @Arg("teamId", () => String) teamId: string
-  // @Ctx() { userId }: MyContext
   Promise<Channel | undefined> {
     const existingTeam = await Team.createQueryBuilder("team")
       .where("team.id = :teamId", { teamId })
@@ -461,7 +462,15 @@ export class ChannelResolver {
 
     if (raw) {
       const { id } = raw[0];
+
+      await Channel.createQueryBuilder("channel")
+        .relation("channel", "invitees")
+        .of(id)
+        .add(userId)
+        .catch((error) => console.error(error));
+
       const newChannel = await Channel.createQueryBuilder("channel")
+        .leftJoinAndSelect("channel.invitees", "invitees")
         .where("channel.id = :id", { id })
         .getOne();
 
