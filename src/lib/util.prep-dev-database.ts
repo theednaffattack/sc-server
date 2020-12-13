@@ -29,7 +29,7 @@ export async function runMigrations(): Promise<void> {
   if (promiseFileLength !== undefined && promiseFileLength > 0) {
     try {
       console.log(
-        `DBMATE INITIATING MIGRATIONS\nRunning ${promiseFileLength} structural migration(s) running.`
+        `DBMATE INITIATING MIGRATIONS\nRunning ${promiseFileLength} data migration(s) running.`
       );
 
       await dbmate.up();
