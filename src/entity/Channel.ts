@@ -58,7 +58,7 @@ export class Channel extends BaseEntity {
 
   @Field(() => Team, { nullable: false })
   @ManyToOne(() => Team, (team) => team.channels)
-  team: [Channel];
+  team: Channel[];
 
   @Field(() => [User], { nullable: "itemsAndList" })
   @ManyToMany(() => User, (user) => user.channel_memberships)
