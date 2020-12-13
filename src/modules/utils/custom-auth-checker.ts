@@ -34,10 +34,16 @@ export const customAuthChecker: AuthChecker<MyContext> = async (
       );
     });
 
-  if (shouldAuthorizationBePerformed) {
+  if (shouldAuthorizationBePerformed === AuthorizationStatus.PERFORM_AUTH) {
     return (
-      parseArgs(args, info).teamId === getJoinedRelations[0].teamId &&
-      context.userId === getJoinedRelations[0].userId &&
+      parseArgs(args, info).teamId ===
+        getJoinedRelations.filter(
+          ({ teamId }) => teamId === parseArgs(args, info).teamId
+        )[0].teamId &&
+      context.userId ===
+        getJoinedRelations.filter(
+          ({ teamId }) => teamId === parseArgs(args, info).teamId
+        )[0].userId &&
       examineFetchReturn(
         getJoinedRelations,
         roles,
