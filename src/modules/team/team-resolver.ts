@@ -25,6 +25,7 @@ import { loggerMiddleware } from "../middleware/logger";
 import { MyContext } from "../../types/MyContext";
 import { TeamRoleEnum } from "../../entity/Role";
 import { UserToTeam } from "../../entity/UserToTeam";
+import { TeamResponse } from "./team-response";
 
 // ADDITIONAL RESOLVERS NEEDED:
 // Update team name
@@ -238,17 +239,27 @@ export class UserTeamResolver {
 
   @UseMiddleware(isAuth, loggerMiddleware)
   // @Authorized("ADMIN", "OWNER")
-  @Mutation(() => Team)
+  @Mutation(() => TeamResponse)
   async createTeam(
     @Arg("name", () => String) name: string,
     @Ctx() { userId }: MyContext
-  ) {
+  ): Promise<TeamResponse> {
+    if (!name || name.length < 2) {
+      return {
+        errors: [
+          {
+            field: "name",
+            message: "A Team name of at least two characters is required.",
+          },
+        ],
+      };
+    }
     const unspecifiedError = "An unspecified error occurred while creating.";
 
     const teamResult = await Team.createQueryBuilder("team")
       .insert()
       .into("team")
-      .values({ name })
+      .values({ name, owner: userId })
       .execute()
       .catch((error) => {
         const catchMessage = "duplicate key value violates unique constraint";
@@ -271,6 +282,7 @@ export class UserTeamResolver {
       const { id: teamId } = teamResult.raw[0];
 
       const newTeam = await Team.createQueryBuilder("team")
+        .leftJoinAndSelect("team.owner", "owner")
         .where("team.id = :id", { id: teamId })
         .getOne();
 
@@ -284,7 +296,29 @@ export class UserTeamResolver {
         .execute()
         .catch((error) => console.error(`${inspect(error, false, 4, true)}`));
 
-      return newTeam;
+      const uttData = await UserToTeam.createQueryBuilder("utt")
+        .where("utt.teamId = :teamId", { teamId })
+        .andWhere("utt.userId = :userId", { userId })
+        .getOne();
+
+      if (newTeam && uttData) {
+        const createTeamResponse = {
+          name: newTeam.name,
+          teamId: newTeam.id,
+          userId: userId,
+          userToTeamId: uttData.userToTeamId,
+        };
+        return { errors: undefined, uttData: createTeamResponse };
+      } else {
+        return {
+          errors: [
+            {
+              field: "createTeam (no field specified)",
+              message: "Error creating new team",
+            },
+          ],
+        };
+      }
     } else {
       throw Error(`${unspecifiedError}: ${name}`);
     }
@@ -357,9 +391,6 @@ export class UserTeamResolver {
       .leftJoinAndSelect("team.members", "member")
       .leftJoinAndSelect("team.channels", "channel")
       .leftJoinAndSelect("team.userToTeams", "userToTeams")
-      // , "member.id = :userId", {
-      //   userId
-      // })
       .where("member.id = :userId", { userId })
       .getMany();
 
@@ -374,6 +405,7 @@ export class UserTeamResolver {
           `Error loading UserToTeam\n${inspect(error, false, 4, true)}`
         );
       });
+    console.log("", { userId, getAllTeamsForUser, getAllTeamsForUserToo });
 
     return getAllTeamsForUserToo;
   }
