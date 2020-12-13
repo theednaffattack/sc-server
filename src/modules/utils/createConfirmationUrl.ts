@@ -6,5 +6,9 @@ export const createConfirmationUrl = async (userId: string) => {
   // const token = v4();
   await redis.set(confirmUserPrefix + userId, userId, "ex", 60 * 60 * 24); // 1 day expiration
 
-  return `http://localhost:3000/user/confirm/${userId}`;
+  return `${
+    process.env.NODE_ENV === "production"
+      ? process.env.FRONT_END_PROTO_AND_DOMAIN_PROD
+      : process.env.FRONT_END_PROTO_AND_DOMAIN_DEV
+  }/confirmation/${userId}`;
 };
