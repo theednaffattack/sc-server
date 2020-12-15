@@ -11,13 +11,12 @@ export function parseArgs(
   inputArgs: any,
   info: GraphQLResolveInfo
 ): ParseArgsValues {
-  console.log("VIEW ARGS", { inputArgs });
   const getKeys = Object.keys(inputArgs);
   const teamIdIsPresentAndTopLevelKey: boolean = getKeys.includes("teamId");
 
   let returnObject = {
     teamId: null,
-    channelId: null
+    channelId: null,
   };
   // IF KEY IS TOP-LEVEL
   if (teamIdIsPresentAndTopLevelKey) {
