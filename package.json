@@ -7,6 +7,7 @@
     "start": "node -r dotenv/config dist/index.js",
     "weird-start": "ts-node -r dotenv/config src/index.ts",
     "build": "tsc",
+    "cf": "ts-node --files -r dotenv/config src/modules/utils/cf-sign.ts",
     "prep-db": "ts-node -r dotenv/config src/lib/util.create-database.ts",
     "drop-db": "ts-node -r dotenv/config src/lib/util.drop-dev-database.ts",
     "local-start": "tsc && node -r dotenv/config src/index.ts",
@@ -18,7 +19,7 @@
   },
   "dependencies": {
     "apollo-server-express": "2.9.9",
-    "aws-sdk": "^2.590.0",
+    "aws-sdk": "^2.812.0",
     "axios": "^0.19.2",
     "bcryptjs": "^2.4.3",
     "class-validator": "^0.9.1",
