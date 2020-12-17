@@ -7,3 +7,9 @@ dist/
 # Hide secure files needed to create
 # production DB with SSL
 db/secret
+
+secret
+
+#logs
+yarn-error.log
+
