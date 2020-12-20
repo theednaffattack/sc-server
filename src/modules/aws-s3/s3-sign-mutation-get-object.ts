@@ -6,9 +6,10 @@ import {
   ArgsType,
   Field,
   InputType,
-  ID
+  ID,
+  Int,
 } from "type-graphql";
-import aws from "aws-sdk";
+import AWS from "aws-sdk";
 
 import { S3SignatureAction, SignedS3Payload } from "./s3-sign-mutation";
 // import { inspect } from "util"; `
@@ -20,24 +21,27 @@ class FileInput {
 
   @Field(() => String)
   uri: string;
+}
 
-  // @Field(() => String, { nullable: false })
-  // type: string;
+@InputType()
+class FileInput_v2 {
+  @Field(() => String, { nullable: false })
+  type: string;
 
-  // @Field()
-  // lastModified: number;
+  @Field()
+  lastModified: number;
 
-  // @Field()
-  // lastModifiedDate: Date;
+  @Field(() => String)
+  lastModifiedDate: string;
 
-  // @Field(() => Int, { nullable: false })
-  // size: number;
+  @Field(() => Int, { nullable: false })
+  size: number;
 
-  // @Field(() => String, { nullable: false })
-  // name: string;
+  @Field(() => String, { nullable: false })
+  name: string;
 
-  // @Field(() => String, { nullable: false })
-  // webkitRelativePath: string;
+  @Field(() => String, { nullable: false })
+  webkitRelativePath: string;
 
   // @Field(() => String, { nullable: false })
   // path: string;
@@ -63,7 +67,62 @@ class SignS3Input {
   action: S3SignatureActions;
 }
 
-const s3Bucket = process.env.S3_BUCKET;
+@ArgsType()
+class SignS3Input_v2 {
+  @Field(() => [FileInput_v2])
+  files: FileInput_v2[];
+
+  @Field(() => S3SignatureAction)
+  action: S3SignatureActions;
+}
+
+@Resolver()
+export class SignS3Files {
+  @Mutation(() => SignedS3Payload)
+  async signS3Files(
+    @Args(() => SignS3Input_v2) { action, files }: SignS3Input_v2
+  ): Promise<SignedS3Payload> {
+    console.log("VIEW ACTION AND FILES SUBMITTED", { action, files });
+
+    const s3Bucket = process.env.S3_BUCKET;
+    const credentials = {
+      accessKeyId: process.env.SC_ADMIN_ACCESS_KEY_ID,
+      secretAccessKey: process.env.SC_ADMIN_SECRET_ACCESS_KEY,
+    };
+
+    AWS.config.update(credentials);
+
+    const s3 = new AWS.S3({
+      signatureVersion: "v4",
+      region: "us-west-1",
+    });
+
+    // const s3Path = `images`;
+
+    const s3Params = files.map((file) => {
+      return {
+        Bucket: s3Bucket,
+        Key: file.name,
+        Expires: 60,
+      };
+    });
+
+    // Map over all the files and sign an individual
+    // request for each file. This will result in a link
+    // that can be used to upload directly from the client to
+    // file storage.
+    return {
+      signatures: await Promise.all(
+        s3Params.map((param) => {
+          let signedRequest = s3.getSignedUrl(action, param);
+          const uri = `https://${s3Bucket}.s3.amazonAWS.com/${param.Key}`;
+
+          return { uri, signedRequest };
+        })
+      ),
+    };
+  }
+}
 
 @Resolver()
 export class SignS3GetObject {
@@ -71,21 +130,22 @@ export class SignS3GetObject {
   async signS3GetObject(
     @Args(() => SignS3Input) { action, files }: SignS3Input
   ): Promise<SignedS3Payload> {
+    const s3Bucket = process.env.S3_BUCKET;
     const credentials = {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_KEY
+      accessKeyId: process.env.SC_ADMIN_ACCESS_KEY_ID,
+      secretAccessKey: process.env.SC_ADMIN_SECRET_ACCESS_KEY,
     };
 
-    aws.config.update(credentials);
+    AWS.config.update(credentials);
 
-    const s3 = new aws.S3({
+    const s3 = new AWS.S3({
       signatureVersion: "v4",
-      region: "us-west-2"
+      region: "us-west-2",
     });
 
     const s3Path = `files`;
 
-    const s3Params = files.map(file => {
+    const s3Params = files.map((file) => {
       let getName = file.uri.split("files/")[1];
       return {
         Bucket: s3Bucket,
@@ -93,14 +153,14 @@ export class SignS3GetObject {
         Expires: 60,
         ResponseContentDisposition: `attachment; filename=${
           file.uri.split("files/")[1]
-        }`
+        }`,
       };
     });
 
     const signedRequests = await Promise.all(
-      s3Params.map(param => {
+      s3Params.map((param) => {
         let signedRequest = s3.getSignedUrl(action, param);
-        const uri = `https://${s3Bucket}.s3.amazonaws.com/${param.Key}`;
+        const uri = `https://${s3Bucket}.s3.amazonAWS.com/${param.Key}`;
 
         return { uri, signedRequest };
       })
@@ -129,7 +189,7 @@ export class SignS3GetObject {
     // console.log("GET FILE", { getFile });
 
     return {
-      signatures: [...signedRequests]
+      signatures: [...signedRequests],
     };
   }
 }

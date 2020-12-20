@@ -6,7 +6,7 @@ import {
   ArgsType,
   Field,
   InputType,
-  Int
+  Int,
 } from "type-graphql";
 
 import { registerEnumType } from "type-graphql";
@@ -41,13 +41,13 @@ type S3SignatureActions = "putObject" | "getObject";
 
 export enum S3SignatureAction {
   putObject = "putObject",
-  getObject = "getObject"
+  getObject = "getObject",
 }
 
 registerEnumType(S3SignatureAction, {
   name: "S3SignatureAction", // this one is mandatory
   description:
-    "The actions associated with obtaining a signed URL from S3 (get | put | delete)" // this one is optional
+    "The actions associated with obtaining a signed URL from S3 (get | put | delete)", // this one is optional
 });
 
 @ArgsType()
@@ -113,19 +113,19 @@ export class SignS3 {
   ): Promise<SignedS3Payload> {
     const credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_KEY
+      secretAccessKey: process.env.AWS_SECRET_KEY,
     };
 
     aws.config.update(credentials);
 
     const s3 = new aws.S3({
       signatureVersion: "v4",
-      region: "us-west-2"
+      region: "us-west-2",
     });
 
     const s3Path = `files`;
 
-    const s3Params = files.map(file => {
+    const s3Params = files.map((file) => {
       const newDate = new Date();
       // if (file.type.includes("image")) {
       console.log("IS THIS HAPPENING?-1");
@@ -134,11 +134,11 @@ export class SignS3 {
         Key: `${s3Path}/${newDate.toISOString()}-${file.name}`,
         Expires: 60,
         ContentType: file.type,
-        ...file
+        ...file,
         // ACL: "public-read"
       };
       // }
-      console.log("IS THIS HAPPENING?-2");
+      // console.log("IS THIS HAPPENING?-2");
 
       // return {
       //   Bucket: s3Bucket,
@@ -150,7 +150,7 @@ export class SignS3 {
     });
 
     const signedRequests = await Promise.all(
-      s3Params.map(param => {
+      s3Params.map((param) => {
         let signedRequest = s3.getSignedUrl(action, param);
         const uri = `https://${s3Bucket}.s3.amazonaws.com/${param.Key}`;
 
@@ -166,7 +166,7 @@ export class SignS3 {
 
         return {
           uri,
-          signedRequest
+          signedRequest,
           // type,
           // name,
           // lastModified,
@@ -179,7 +179,7 @@ export class SignS3 {
     );
 
     return {
-      signatures: [...signedRequests]
+      signatures: [...signedRequests],
     };
   }
 }

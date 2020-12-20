@@ -33,6 +33,7 @@ import { createFile } from "./channel-helpers/create-file";
 import { createMessageWithoutFile } from "./channel-helpers/create-message-without-file";
 import { Thread } from "../../entity/Thread";
 import { AddThreadPayload } from "./add-thread-payload";
+import { deserialize } from "./deserialize-message";
 // import { AddDirectMessagePayloadType } from "../direct-messages/direct-messages-resolver";
 
 enum Topic {
@@ -550,8 +551,6 @@ export class ChannelResolver {
     @Arg("channelId", () => String, { nullable: true }) channelId: string,
     @Arg("teamId", () => String, { nullable: true }) teamId: string
   ): Promise<Thread[]> {
-    console.log("TEAM ID", teamId);
-
     const getThreads = await Thread.createQueryBuilder("thread")
       .leftJoinAndSelect("thread.channel", "channel")
       .leftJoinAndSelect("thread.team", "team")
@@ -564,6 +563,23 @@ export class ChannelResolver {
       .andWhere("team.id = :teamId", { teamId })
       .getMany();
 
+    console.log(
+      "GET THREADS",
+      getThreads.map(({ messages, ...theOthers }) => {
+        return {
+          ...theOthers,
+          messages: messages?.map(({ message, ...theRest }) => {
+            console.log("VIEW MESSAGE", { message });
+
+            deserialize(message);
+            return {
+              message,
+              ...theRest,
+            };
+          }),
+        };
+      })
+    );
     return getThreads;
   }
 
@@ -651,8 +667,6 @@ export class ChannelResolver {
       .leftJoinAndSelect("channel.invitees", "invitees")
       .where("teamAlias.id = :teamId", { teamId })
       .getMany();
-
-    console.log("WHAT IS FIND CHANNELS", { teamId, findChannels });
 
     return findChannels;
   }
