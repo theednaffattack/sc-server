@@ -6,6 +6,7 @@ import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
 import { sendEmail } from "../utils/sendEmail";
 import { createConfirmationUrl } from "../utils/createConfirmationUrl";
+import { RegisterResponse } from "../team/register-response";
 
 @Resolver()
 export class RegisterResolver {
@@ -15,21 +16,60 @@ export class RegisterResolver {
     return await "Hello World";
   }
 
-  @Mutation(() => User)
+  @Mutation(() => RegisterResponse)
   async register(
     @Arg("data")
     { email, firstName, lastName, password, username }: RegisterInput
-  ): Promise<User> {
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await User.create({
-      firstName,
-      lastName,
-      email,
-      username,
-      password: hashedPassword,
-    }).save();
+  ): Promise<RegisterResponse> {
+    let hashedPassword;
+    let user;
 
-    await sendEmail(email, await createConfirmationUrl(user.id));
-    return user;
+    try {
+      hashedPassword = await bcrypt.hash(password, 12);
+    } catch (error) {
+      console.warn("ERROR HASHING PASSWORD", error);
+    }
+
+    try {
+      user = await User.create({
+        firstName,
+        lastName,
+        email,
+        username,
+        password: hashedPassword,
+      }).save();
+    } catch (error) {
+      console.warn("ERROR CREATING USER", error);
+
+      return {
+        errors: [
+          {
+            field: "username",
+            message: "Error creating user.",
+          },
+        ],
+      };
+    }
+
+    try {
+      if (user) {
+        await sendEmail(email, await createConfirmationUrl(user.id));
+      } else {
+        return {
+          errors: [
+            {
+              field: "username",
+              message: "Error creating user.",
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.warn("ERROR SENDING CONFIRMATION EMAIL", error);
+    }
+
+    return {
+      user,
+    };
   }
 }
