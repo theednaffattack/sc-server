@@ -8,30 +8,46 @@ import { ChangePasswordInput } from "./changePassword/ChangePasswordInput";
 import { MyContext } from "src/types/MyContext";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
+import { ChangePasswordResponse } from "../team/change-password-response";
 
 @Resolver()
 export class ChangePasswordFromTokenResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Mutation(() => User, { nullable: true })
+  @Mutation(() => ChangePasswordResponse)
   async changePasswordFromToken(
     @Arg("data")
     { token, password }: ChangePasswordInput,
     @Ctx() ctx: MyContext
-  ): Promise<User | null> {
+  ): Promise<ChangePasswordResponse> {
     console.log("VIEW TOKEN", token);
     // console.log("VIEW USERID", userId);
 
     const userId = await redis.get(forgotPasswordPrefix + token);
     // token expired in redis, possibly bad token
     if (!userId) {
-      return null;
+      return {
+        errors: [
+          {
+            field: "password",
+            message: "Change password token has expired.",
+          },
+        ],
+      };
     }
 
     const user = await User.findOne(userId);
 
     // can't find a user in the db
     if (!user) {
-      return null;
+      return {
+        errors: [
+          {
+            field: "password",
+            message:
+              "Error changing password. Please contact your Team Administrator.",
+          },
+        ],
+      };
     }
 
     // don't allow this token to be used to change
@@ -47,6 +63,8 @@ export class ChangePasswordFromTokenResolver {
     // login in the user
     ctx.req.session!.userId = user.id;
 
-    return user;
+    return {
+      user,
+    };
   }
 }
