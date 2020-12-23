@@ -9,7 +9,7 @@ import {
   Subscription,
   ResolverFilterData,
   Root,
-  Arg
+  Arg,
 } from "type-graphql";
 
 import { MyContext } from "../../types/MyContext";
@@ -62,7 +62,7 @@ export class AddMessageToChannelResolver {
 
     filter: ({
       payload,
-      args
+      args,
     }: ResolverFilterData<
       IAddMessagePayload,
       DataAddMessageToChannelInput
@@ -75,7 +75,7 @@ export class AddMessageToChannelResolver {
       } else {
         return false;
       }
-    }
+    },
   })
   channelMessages(
     @Root() channelPayload: AddMessagePayload,
@@ -96,7 +96,7 @@ export class AddMessageToChannelResolver {
     console.log("CHECK ADD MESSAGE TO CHANNEL RESOLVER", input.teamId);
     const sentBy = await User.findOne(context.userId);
 
-    const receiver = await User.findOne(input.sentTo);
+    const receiver = await User.findOne(input.invitees[0]);
 
     let existingChannel;
     let newMessage: any;
@@ -112,7 +112,7 @@ export class AddMessageToChannelResolver {
         files: input.files,
         message: input.message,
         receiver,
-        sentBy
+        sentBy,
       });
       console.log(
         "VIEW REURN OBJECT INSIDE ADD MESSAGE TO CHANNEL (if files and sentBy and receiver === true)",
@@ -131,21 +131,21 @@ export class AddMessageToChannelResolver {
         channelId: input.channelId,
         message: input.message,
         receiver,
-        sentBy
+        sentBy,
       });
     }
 
     if (sentBy && receiver && input.images && input.images[0]) {
-      const newImageData: Image[] = input.images.map(image =>
+      const newImageData: Image[] = input.images.map((image) =>
         Image.create({
           uri: `${image}`,
-          user: sentBy
+          user: sentBy,
         })
       );
 
       // save that image to the database
       let newImages = await Promise.all(
-        newImageData.map(async newImage => await newImage.save())
+        newImageData.map(async (newImage) => await newImage.save())
       );
 
       // add the images to the user.images
@@ -163,21 +163,21 @@ export class AddMessageToChannelResolver {
         message: input.message,
         user: receiver,
         sentBy,
-        images: [...newImages]
+        images: [...newImages],
       };
 
       // CREATING rather than REPLYING to message...
       newMessage = await Message.create(createMessage).save();
 
-      newImages.forEach(async image => {
+      newImages.forEach(async (image) => {
         image.message = newMessage.id;
         await image.save();
         return image;
       });
 
       let existingChannel = await Channel.findOne(input.channelId, {
-        relations: ["messages", "invitees", "messages.images"]
-      }).catch(error => error);
+        relations: ["messages", "invitees", "messages.images"],
+      }).catch((error) => error);
 
       const foundChannel = existingChannel && existingChannel.id ? true : false;
 
@@ -205,7 +205,7 @@ export class AddMessageToChannelResolver {
         success: existingChannel && foundChannel ? true : false,
         channelId: input.channelId,
         message: newMessage,
-        user: receiver
+        user: receiver,
         // invitees: [...collectInvitees]
       };
 
@@ -223,12 +223,12 @@ export class AddMessageToChannelResolver {
       let createMessageWithoutImage = {
         message: input.message,
         user: receiver,
-        sentBy
+        sentBy,
       };
 
       existingChannel = await Channel.findOne(input.channelId, {
-        relations: ["messages", "invitees", "messages.images"]
-      }).catch(error => error);
+        relations: ["messages", "invitees", "messages.images"],
+      }).catch((error) => error);
 
       newMessage = await Message.create(createMessageWithoutImage).save();
 
@@ -258,7 +258,7 @@ export class AddMessageToChannelResolver {
         success: existingChannel && existingChannel.id ? true : false,
         channelId: input.channelId,
         message: newMessage,
-        user: receiver
+        user: receiver,
         // invitees: [...collectInvitees]
       };
 
