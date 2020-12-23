@@ -15,11 +15,15 @@ docker build -t theednaffattack/sc-server:prod .
 Push image to dockerHub
 
 ```bash
-docker push theednaffattack/sc-server
+docker push theednaffattack/sc-server:prod
 ```
 
 Combined build and push
 
 ```bash
-docker build -t theednaffattack/sc-db:prod . && docker push theednaffattack/sc-db
+docker build -t theednaffattack/sc-server:prod . && docker push theednaffattack/sc-server:prod
+```
+
+```bash
+docker build -t theednaffattack/sc-db:prod . && docker push theednaffattack/sc-db:prod
 ```
