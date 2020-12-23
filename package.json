@@ -36,6 +36,7 @@
     "graphql": "^14.2.0",
     "graphql-query-complexity": "^0.2.3",
     "graphql-redis-subscriptions": "^2.1.2",
+    "graphql-subscriptions": "1.0.0",
     "http": "^0.0.0",
     "install": "^0.13.0",
     "internal-ip": "^5.0.0",
