@@ -9,6 +9,7 @@ import connectRedis from "connect-redis";
 import internalIp from "internal-ip";
 import colors from "colors/safe";
 import http from "http";
+import cors, { CorsOptions as CorsOptionsProps } from "cors";
 
 import { redis } from "./redis";
 import { redisSessionPrefix } from "./constants";
@@ -19,10 +20,10 @@ import { MyContext } from "./types/MyContext";
 import { runMigrations } from "./lib/util.prep-dev-database";
 // import { createUsersLoader } from "./modules/utils/data-loaders/batch-user-loader";
 
-interface CorsOptionsProps {
-  credentials: boolean;
-  origin: (origin: any, callback: any) => void;
-}
+// interface CorsOptionsProps {
+//   credentials: boolean;
+//   origin: (origin: any, callback: any) => void;
+// }
 
 const port = process.env.VIRTUAL_PORT;
 
@@ -185,7 +186,6 @@ const main = async () => {
         `${process.env.PRODUCTION_CLIENT_URI}`,
         `${process.env.PRODUCTION_API_URI}`,
         `${process.env.GRAPHQL_ENDPOINT}`,
-        "https://scserver.ednaff.dev",
       ]
     : [
         "http://localhost:3000",
@@ -204,20 +204,6 @@ const main = async () => {
       }
     },
   };
-
-  // // we're bypassing cors used by apollo-server-express here
-  // app.use(
-  //   cors({
-  //     credentials: true,
-  //     origin: function(origin, callback) {
-  //       if (whitelistedOrigins.indexOf(origin) !== -1 || !origin) {
-  //         callback(null, true);
-  //       } else {
-  //         callback(new Error("Not allowed by CORS"));
-  //       }
-  //     }
-  //   })
-  // );
 
   // needed to remove domain from our cookie
   // in non-production environments
@@ -259,7 +245,10 @@ const main = async () => {
 
   app.use(sessionMiddleware);
 
-  apolloServer.applyMiddleware({ app, cors: corsOptions });
+  // we're bypassing cors used by apollo-server-express here
+  app.use(cors(corsOptions));
+
+  apolloServer.applyMiddleware({ app, cors: false });
 
   let httpServer = http.createServer(app);
   apolloServer.installSubscriptionHandlers(httpServer);
