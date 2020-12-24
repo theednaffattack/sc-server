@@ -5,6 +5,7 @@ SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
+SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
@@ -64,7 +65,7 @@ CREATE TYPE public.user_to_team_teamroleauthorizations_enum AS ENUM (
 
 SET default_tablespace = '';
 
-SET default_with_oids = false;
+SET default_table_access_method = heap;
 
 --
 -- Name: channel; Type: TABLE; Schema: public; Owner: -
@@ -192,7 +193,8 @@ CREATE TABLE public.thread (
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     updated_at timestamp without time zone DEFAULT now(),
     "userId" uuid,
-    "teamId" uuid
+    "teamId" uuid,
+    "channelId" uuid
 );
 
 
@@ -208,7 +210,8 @@ CREATE TABLE public."user" (
     "profileImageUri" text,
     password character varying NOT NULL,
     confirmed boolean DEFAULT false NOT NULL,
-    "channelsCreatedId" uuid
+    "channelsCreatedId" uuid,
+    username text NOT NULL
 );
 
 
@@ -435,6 +438,14 @@ ALTER TABLE ONLY public.team
 
 ALTER TABLE ONLY public."user"
     ADD CONSTRAINT "UQ_3d328f5ff477a6bd7994cdbe823" UNIQUE ("profileImageUri");
+
+
+--
+-- Name: user UQ_78a916df40e02a9deb1c4b75edb; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."user"
+    ADD CONSTRAINT "UQ_78a916df40e02a9deb1c4b75edb" UNIQUE (username);
 
 
 --
@@ -744,6 +755,14 @@ ALTER TABLE ONLY public.team_members_user
 
 
 --
+-- Name: thread FK_b93a00c3e9bd7ae9fe99616aacc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.thread
+    ADD CONSTRAINT "FK_b93a00c3e9bd7ae9fe99616aacc" FOREIGN KEY ("channelId") REFERENCES public.channel(id);
+
+
+--
 -- Name: file_entity FK_bcc014998edf30847460a40474d; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -808,3 +827,5 @@ ALTER TABLE ONLY public.team_team_roles_role
 -- Dbmate schema migrations
 --
 
+INSERT INTO public.schema_migrations (version) VALUES
+    ('20201119234002');
