@@ -13,3 +13,5 @@ secret
 #logs
 yarn-error.log
 
+.env.ednaff
+.env.old
