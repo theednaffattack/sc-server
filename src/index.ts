@@ -200,7 +200,10 @@ const main = async () => {
       if (!origin || allowedListOfOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        console.error("cors error:: origin: ", origin);
+        console.error("cors error:: origin: ", {
+          origin,
+          allowedListOfOrigins,
+        });
       }
     },
   };
