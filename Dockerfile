@@ -9,6 +9,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY ./src ./src
+COPY ./db/migrations ./db/migrations
 COPY ./.env ./
 COPY ./yarn.lock ./
 RUN yarn install --frozen-lockfile && yarn build
@@ -30,6 +31,7 @@ RUN yarn install --frozen-lockfile --production
 
 ## We just need the build to execute the command
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/db/migrations ./db/migrations
 # Not sure if copying the env is a good idea. Maybe just for dev
 COPY .env .
 
