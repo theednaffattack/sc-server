@@ -12,6 +12,16 @@ Build and tag image
 docker build -t theednaffattack/sc-server:prod .
 ```
 
+Slack Clone DB (postgres - Docker container)
+
+```bash
+docker build -t theednaffattack/sc-db:init .
+```
+
+```bash
+docker build -t theednaffattack/sc-db:init . && docker push theednaffattack/sc-db:init
+```
+
 Push image to dockerHub
 
 ```bash
@@ -25,5 +35,5 @@ docker build -t theednaffattack/sc-server:prod . && docker push theednaffattack/
 ```
 
 ```bash
-docker build -t theednaffattack/sc-db:prod . && docker push theednaffattack/sc-db:prod
+docker build -t theednaffattack/sc-db:init . && docker push theednaffattack/sc-db:init
 ```
