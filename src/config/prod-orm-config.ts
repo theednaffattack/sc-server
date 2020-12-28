@@ -4,7 +4,7 @@ export const productionOrmConfig: PostgresConnectionOptions = {
   name: "default",
   type: "postgres",
   host: process.env.PG_DB_HOST,
-  port: parseInt(process.env.PG_DB_PORT!, 10),
+  port: parseInt(process.env.POSTGRES_PORT!, 10),
   ssl: true,
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASS,
