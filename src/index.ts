@@ -11,7 +11,7 @@ import colors from "colors/safe";
 import http from "http";
 import cors, { CorsOptions as CorsOptionsProps } from "cors";
 
-import { redis } from "./redis";
+import { redis, redisError } from "./redis";
 import { redisSessionPrefix } from "./constants";
 import { createSchema } from "./global-utils/createSchema";
 import { devOrmconfig } from "./config/dev-orm-config";
@@ -207,6 +207,8 @@ const main = async () => {
       }
     },
   };
+
+  redis.on("error", redisError);
 
   // needed to remove domain from our cookie
   // in non-production environments
