@@ -1,6 +1,6 @@
 import { buildSchema } from "type-graphql";
 
-import { pubsub } from "../global-utils/redis-config";
+import { pubsub } from "../redis";
 
 import { customAuthChecker } from "../modules/utils/custom-auth-checker";
 
