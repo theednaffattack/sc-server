@@ -31,9 +31,17 @@ docker push theednaffattack/sc-server:prod
 Combined build and push
 
 ```bash
-docker build -t theednaffattack/sc-server:prod . && docker push theednaffattack/sc-server:prod
+docker build -t theednaffattack/sc-server:production . && docker push theednaffattack/sc-server:production
 ```
 
 ```bash
 docker build -t theednaffattack/sc-db:init . && docker push theednaffattack/sc-db:init
+```
+
+```bash
+docker build --build-arg POSTGRES_MAJOR_VERSION=13 --build-arg POSTGIS_MAJOR=3 -t kartoza/postgis:POSTGRES_MAJOR_VERSION .
+```
+
+```bash
+docker build --build-arg POSTGRES_MAJOR_VERSION=12  --build-arg POSTGIS_MAJOR=3 -t kartoza/postgis:POSTGRES_MAJOR_VERSION .
 ```
