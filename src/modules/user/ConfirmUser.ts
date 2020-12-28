@@ -11,8 +11,6 @@ export class ConfirmUserResolver {
     @Arg("token") token: string
     // @Ctx() ctx: MyContext
   ): Promise<boolean> {
-    console.log("working!");
-
     const userId = await redis.get(confirmUserPrefix + token);
 
     console.log("userId", userId);
@@ -21,8 +19,6 @@ export class ConfirmUserResolver {
       return false;
     }
 
-    // update the user to be confirmed and ditch the token from redis
-    // @todo: prefix ALL redis tokens for readability
     await User.update({ id: userId }, { confirmed: true });
     await redis.del(token);
 
