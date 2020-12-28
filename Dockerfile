@@ -9,8 +9,10 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY ./src ./src
-COPY ./db/migrations ./db/migrations
-COPY ./.env ./
+COPY ./db/postgres/migrations ./db/migrations
+COPY ./certs ./certs
+# COPY ./.env ./
+# COPY ./secret ./secret
 COPY ./yarn.lock ./
 RUN yarn install --frozen-lockfile && yarn build
 # RUN npm ci --quiet && npm run build
@@ -32,8 +34,12 @@ RUN yarn install --frozen-lockfile --production
 ## We just need the build to execute the command
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/db/migrations ./db/migrations
+COPY --from=builder /usr/src/app/certs ./certs
+# COPY --from=builder /usr/src/app/.env .
+# COPY --from=builder /usr/src/app/secret ./secret
+# RUN make /certs
 # Not sure if copying the env is a good idea. Maybe just for dev
-COPY .env .
+# COPY .env .
 
 
 # Inform Docker that the container is listening on the specified port at runtime.
