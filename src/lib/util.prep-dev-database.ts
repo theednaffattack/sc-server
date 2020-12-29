@@ -14,24 +14,25 @@ export async function runMigrations(): Promise<void> {
 
   const dbmate = new DbMate(dbConnectionString);
 
-  const promiseFileLength = await new Promise<number>((resolve, reject) => {
-    readdir(`${process.cwd()}/db/migrations`, function (error, files) {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(files.length);
-      }
-      return;
-    });
-  });
+  const numberOfMigrationFiles = await new Promise<number>(
+    (resolve, reject) => {
+      readdir(`${process.cwd()}/db/migrations`, function (error, files) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(files.length);
+        }
+        return;
+      });
+    }
+  );
 
   // invoke up, down, drop as necessary
-  if (promiseFileLength !== undefined && promiseFileLength > 0) {
+  if (numberOfMigrationFiles !== undefined && numberOfMigrationFiles > 0) {
+    console.log(
+      `DBMATE INITIATING MIGRATIONS\nRunning ${numberOfMigrationFiles} data migration(s) running.`
+    );
     try {
-      console.log(
-        `DBMATE INITIATING MIGRATIONS\nRunning ${promiseFileLength} data migration(s) running.`
-      );
-
       await dbmate.up();
     } catch (dbmateError) {
       console.error("MIGRATION ERROR\n", dbmateError);
