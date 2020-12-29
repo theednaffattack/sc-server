@@ -148,9 +148,9 @@ CREATE TABLE public.role (
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.schema_migrations (
-    version character varying(255) NOT NULL
-);
+-- CREATE TABLE public.schema_migrations (
+--     version character varying(255) NOT NULL
+-- );
 
 
 --
@@ -471,14 +471,6 @@ ALTER TABLE ONLY public.team
 
 ALTER TABLE ONLY public."user"
     ADD CONSTRAINT "UQ_e12875dfb3b1d92d7d7c5377e22" UNIQUE (email);
-
-
---
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
 
 
 --
@@ -828,8 +820,8 @@ ALTER TABLE ONLY public.team_team_roles_role
 -- Dbmate schema migrations
 --
 
-INSERT INTO public.schema_migrations (version) VALUES
-    ('20201119234002');
+-- INSERT INTO public.schema_migrations (version) VALUES
+--     ('20201229023514');
 
 
 -- migrate:down
