@@ -16,7 +16,7 @@ const productionOptions: Redis.RedisOptions = {
   host: process.env.REDIS_HOST,
   port: parseInt(process.env.REDIS_INTERIOR_PORT!, 10),
   name: "myredis",
-  password: process.env.REDIS_PASS!,
+  password: process.env.REDIS_PASS,
   retryStrategy: (times: any) => Math.max(times * 100, 3000),
   showFriendlyErrorStack: true,
   tls: {
@@ -27,11 +27,13 @@ const productionOptions: Redis.RedisOptions = {
   },
 };
 export function redisError(error: Error) {
-  console.warn("error", error);
+  console.warn("redis error", error);
 }
 export const redis = nodeEnvIs_NOT_Prod
   ? new Redis(developmentOptions)
   : new Redis(productionOptions);
+
+redis.on("error", redisError);
 
 export const pubsub = new RedisPubSub({
   // ...,
