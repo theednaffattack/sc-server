@@ -40,7 +40,7 @@
     "http": "^0.0.0",
     "install": "^0.13.0",
     "internal-ip": "^5.0.0",
-    "ioredis": "^4.9.0",
+    "ioredis": "4.19.4",
     "nodemailer": "^6.0.0",
     "pg": "^7.9.0",
     "pgtools": "^0.3.0",
