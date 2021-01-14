@@ -37,7 +37,7 @@ const nodeEnvIsProd = process.env.NODE_ENV === "production";
 
 const ormConnection = nodeEnvIsProd ? productionOrmConfig : devOrmconfig;
 
-const getContextFromHttpRequest = async (
+const getContextFromHttpRequest = (
   req: MyContext["req"],
   res: MyContext["res"]
 ) => {
@@ -212,7 +212,7 @@ const main = async () => {
   // in non-production environments
   if (nodeEnvIsProd) {
     sessionMiddleware = session({
-      name: "scg",
+      name: process.env.COOKIE_NAME,
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
@@ -224,12 +224,12 @@ const main = async () => {
         httpOnly: true,
         secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
-        domain: "ednaff.dev",
+        domain: process.env.PRODUCTION_API_ORIGIN,
       },
     });
   } else {
     sessionMiddleware = session({
-      name: "scg",
+      name: process.env.COOKIE_NAME,
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
