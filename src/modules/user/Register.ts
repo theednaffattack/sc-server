@@ -12,8 +12,8 @@ import { RegisterResponse } from "../team/register-response";
 export class RegisterResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
   @Query(() => String, { name: "helloWorld", nullable: false })
-  async hello() {
-    return await "Hello World";
+  hello() {
+    return "Hello World";
   }
 
   @Mutation(() => RegisterResponse)
