@@ -563,23 +563,6 @@ export class ChannelResolver {
       .andWhere("team.id = :teamId", { teamId })
       .getMany();
 
-    console.log(
-      "GET THREADS",
-      getThreads.map(({ messages, ...theOthers }) => {
-        return {
-          ...theOthers,
-          messages: messages?.map(({ message, ...theRest }) => {
-            console.log("VIEW MESSAGE", { message });
-
-            deserialize(message);
-            return {
-              message,
-              ...theRest,
-            };
-          }),
-        };
-      })
-    );
     return getThreads;
   }
 

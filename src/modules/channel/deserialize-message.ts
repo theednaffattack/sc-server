@@ -12,8 +12,6 @@ export function deserialize(htmlString: string) {
 
 // @ts-ignore
 function deserializeFunc(el: any, originalHtmlString: string) {
-  console.log("VIEW ELEMENT KEYS", Object.keys(el));
-
   if (el.nodeType === 3) {
     return el.textContent;
   } else if (el.nodeType !== 1) {
