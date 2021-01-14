@@ -1,15 +1,39 @@
-version: "3"
+version: "3.2"
 services:
   sc-redis:
     image: ${REDIS_IMAGE_NAME}
     container_name: ${REDIS_CONTAINER_NAME}
     environment:
-      REDIS_PASS: ${REDIS_PASS}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_CMD_OPTS: "--appendonly yes"
+      REDIS_TLS_PORT: ${REDIS_TLS_PORT}
+      PORT: ${REDIS_INTERIOR_PORT}
+      # REDIS_TLS_PORT_NUMBER: ${REDIS_EXTERIOR_PORT}
+      REDIS_PORT_NUMBER: ${REDIS_INTERIOR_PORT}
+      REDIS_TLS_PORT_NUMBER: ${REDIS_TLS_PORT}
+      REDIS_TLS_ENABLED: "yes"
+      # REDIS_TLS_AUTH_CLIENTS: "yes"
+      REDIS_TLS_CERT_FILE: /opt/bitnami/redis/certs/redis.crt
+      REDIS_TLS_KEY_FILE: /opt/bitnami/redis/certs/redis.key
+      REDIS_TLS_CA_FILE: /opt/bitnami/redis/certs/redisCA.crt
     volumes:
-      - ${REDIS_DB_PATH}:/data
-      - ${REDIS_PATH_TO_CERTS}:/certs
+      - ${REDIS_DB_PATH}:/bitnami/redis/data:rw
+      - ${REDIS_PATH_TO_CERTS}:/certs:rw
+      - type: "bind"
+        source: ${REDIS_PATH_TO_CERTS}/key.pem
+        target: /opt/bitnami/redis/certs/redis.key
+      - type: "bind"
+        source: ${REDIS_PATH_TO_CERTS}/cert.pem
+        target: /opt/bitnami/redis/certs/redis.crt
+      - type: "bind"
+        source: ${REDIS_PATH_TO_CERTS}/fullchain.pem
+        target: /opt/bitnami/redis/certs/redisCA.crt
+      # - ${REDIS_PATH_TO_CERTS}/key.pem:/opt/bitnami/redis/certs/redis.key
+      # - ${REDIS_PATH_TO_CERTS}/cert.pem:/opt/bitnami/redis/certs/redis.crt
+      # - ${REDIS_PATH_TO_CERTS}/fullchain.pem:/opt/bitnami/redis/certs/redisCA.crt
     ports:
-      - "0.0.0.0:${REDIS_EXTERIOR_PORT}:${REDIS_INTERIOR_PORT}"
+      - "0.0.0.0:${REDIS_EXTERIOR_PORT}:${REDIS_TLS_PORT}"
+      # - "33555:${REDIS_INTERIOR_PORT}"
     restart: on-failure
 
   sc-db:
@@ -43,7 +67,7 @@ services:
       - sc-db
     container_name: ${API_CONTAINER_NAME}
     volumes:
-      - ${REDIS_PATH_TO_CERTS}:/app/certs
+      - ${REDIS_PATH_TO_CERTS}:/app/certs:rw
     environment:
       VIRTUAL_PORT: ${VIRTUAL_PORT}
       VIRTUAL_HOST: ${VIRTUAL_HOST}
@@ -57,6 +81,7 @@ services:
       REDIS_INTERIOR_PORT: ${REDIS_INTERIOR_PORT}
       PG_DB_HOST: ${PG_DB_HOST}
       PG_DB_PORT: ${PG_DB_PORT}
+      POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_PASS: ${POSTGRES_PASS}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DBNAME: ${POSTGRES_DBNAME}
@@ -70,7 +95,9 @@ services:
       PG_PROD_CONNECTION_STRING: ${PG_PROD_CONNECTION_STRING}
       POSTMARK_API_TOKEN: ${POSTMARK_API_TOKEN}
       REDIS_EXTERIOR_PORT: ${REDIS_EXTERIOR_PORT}
-      REDIS_PASS: ${REDIS_PASS}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      COOKIE_NAME: ${COOKIE_NAME}
+      FRONT_END_PROTO_AND_DOMAIN_PROD: ${FRONT_END_PROTO_AND_DOMAIN_PROD}
     ports:
       - "${VIRTUAL_PORT}:${VIRTUAL_PORT}"
 
