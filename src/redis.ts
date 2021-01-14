@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+// import redisClient from "redis";
 import path from "path";
 import fs from "fs";
 import { RedisPubSub } from "graphql-redis-subscriptions";
@@ -16,26 +17,31 @@ const productionOptions: Redis.RedisOptions = {
   host: process.env.REDIS_HOST,
   port: parseInt(process.env.REDIS_INTERIOR_PORT!, 10),
   name: "myredis",
-  password: process.env.REDIS_PASS,
+  password: process.env.REDIS_PASSWORD,
   retryStrategy: (times: any) => Math.max(times * 100, 3000),
   showFriendlyErrorStack: true,
+  // connectTimeout: 10000,
+
   tls: {
     ca: fs.readFileSync(path.resolve(__dirname, `../certs/fullchain.pem`)),
     cert: fs.readFileSync(path.resolve(__dirname, `../certs/cert.pem`)),
     key: fs.readFileSync(path.resolve(__dirname, `../certs/key.pem`)),
-    host: process.env.VIRTUAL_HOST,
-    secureProtocol: "TLSv1_2_method",
+    servername: process.env.VIRTUAL_HOST,
+    maxVersion: "TLSv1.2",
+    minVersion: "TLSv1.2",
+    // secureProtocol: "",
     checkServerIdentity: () => {
       return undefined;
     },
   },
 };
+
 export function redisError(error: Error) {
   console.warn("redis error", {
     error,
     productionOptions,
     env: process.env.NODE_ENV,
-    isProd: nodeEnvIs_NOT_Prod,
+    isNotProd: nodeEnvIs_NOT_Prod,
   });
 }
 
@@ -53,12 +59,6 @@ redis.on("ready", redisReady);
 
 export const pubsub = new RedisPubSub({
   // ...,
-  publisher:
-    process.env.NODE_ENV === "production"
-      ? new Redis(productionOptions)
-      : new Redis(developmentOptions),
-  subscriber:
-    process.env.NODE_ENV === "production"
-      ? new Redis(productionOptions)
-      : new Redis(developmentOptions),
+  publisher: redis,
+  subscriber: redis,
 });
