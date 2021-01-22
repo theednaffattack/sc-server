@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 // import redisClient from "redis";
-import path from "path";
-import fs from "fs";
+// import path from "path";
+// import fs from "fs";
 import { RedisPubSub } from "graphql-redis-subscriptions";
 
 const nodeEnvIs_NOT_Prod = process.env.NODE_ENV !== "production";
@@ -15,25 +15,24 @@ const developmentOptions: Redis.RedisOptions = {
 
 const productionOptions: Redis.RedisOptions = {
   host: process.env.REDIS_HOST,
-  port: parseInt(process.env.REDIS_INTERIOR_PORT!, 10),
+  port: parseInt(process.env.REDIS_INTERIOR_PORT!, 10), // parseInt(process.env.REDIS_INTERIOR_PORT!, 10),
   name: "myredis",
-  password: process.env.REDIS_PASSWORD,
+  password: process.env.REDIS_PASS,
   retryStrategy: (times: any) => Math.max(times * 100, 3000),
   showFriendlyErrorStack: true,
   // connectTimeout: 10000,
-
-  tls: {
-    ca: fs.readFileSync(path.resolve(__dirname, `../certs/fullchain.pem`)),
-    cert: fs.readFileSync(path.resolve(__dirname, `../certs/cert.pem`)),
-    key: fs.readFileSync(path.resolve(__dirname, `../certs/key.pem`)),
-    servername: process.env.VIRTUAL_HOST,
-    maxVersion: "TLSv1.2",
-    minVersion: "TLSv1.2",
-    // secureProtocol: "",
-    checkServerIdentity: () => {
-      return undefined;
-    },
-  },
+  // tls: {
+  //   ca: fs.readFileSync(path.resolve(__dirname, `../certs/fullchain.pem`)),
+  //   cert: fs.readFileSync(path.resolve(__dirname, `../certs/cert.pem`)),
+  //   key: fs.readFileSync(path.resolve(__dirname, `../certs/key.pem`)),
+  //   servername: process.env.VIRTUAL_HOST,
+  //   maxVersion: "TLSv1.2",
+  //   minVersion: "TLSv1.2",
+  //   // secureProtocol: "",
+  //   checkServerIdentity: () => {
+  //     return undefined;
+  //   },
+  // },
 };
 
 export function redisError(error: Error) {
