@@ -1,8 +1,8 @@
 Arguments: 
-  /Users/eddienaff/.nvm/versions/node/v12.16.2/bin/node /usr/local/Cellar/yarn/1.22.4/libexec/bin/yarn.js add -D @types/aws-cloudfront-sign
+  /Users/eddienaff/.nvm/versions/node/v12.16.2/bin/node /usr/local/Cellar/yarn/1.22.4/libexec/bin/yarn.js add @aws-sdk/acm
 
 PATH: 
-  /Users/eddienaff/.yarn/bin:/Users/eddienaff/.config/yarn/global/node_modules/.bin:/Users/eddienaff/.nvm/versions/node/v12.16.2/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/Applications/Postgres.app/Contents/Versions/latest/bin
+  /Applications/Postgres.app/Contents/MacOS/bin:/Users/eddienaff/.yarn/bin:/Users/eddienaff/.config/yarn/global/node_modules/.bin:/Users/eddienaff/.nvm/versions/node/v12.16.2/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/Applications/Postgres.app/Contents/Versions/latest/bin
 
 Yarn version: 
   1.22.4
@@ -14,7 +14,7 @@ Platform:
   darwin x64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/@types%2faws-cloudfront-sign: Not found
+  Error: https://registry.yarnpkg.com/@aws-sdk%2facm: Not found
       at Request.params.callback [as _callback] (/usr/local/Cellar/yarn/1.22.4/libexec/lib/cli.js:66987:18)
       at Request.self.callback (/usr/local/Cellar/yarn/1.22.4/libexec/lib/cli.js:140748:22)
       at Request.emit (events.js:310:20)
@@ -36,6 +36,7 @@ npm manifest:
       "start": "node -r dotenv/config dist/index.js",
       "weird-start": "ts-node -r dotenv/config src/index.ts",
       "build": "tsc",
+      "cf": "ts-node --files -r dotenv/config src/modules/utils/cf-sign.ts",
       "prep-db": "ts-node -r dotenv/config src/lib/util.create-database.ts",
       "drop-db": "ts-node -r dotenv/config src/lib/util.drop-dev-database.ts",
       "local-start": "tsc && node -r dotenv/config src/index.ts",
@@ -43,12 +44,12 @@ npm manifest:
       "tsndev": "ts-node-dev --respawn src/index.ts",
       "db:setup": "ts-node ./src/test-utils/setup.ts",
       "test": "npm run db:setup && TERM=dumb jest --detectOpenHandles",
-      "tdev": "npm run db:setup && TERM=dumb jest --watch --detectOpenHandles"
+      "tdev": "npm run db:setup && TERM=dumb jest --watch --detectOpenHandles",
+      "upload-cert": "ts-node -r dotenv/config src/lib/util.upload-certificate.ts"
     },
     "dependencies": {
       "apollo-server-express": "2.9.9",
-      "aws-cloudfront-sign": "^2.2.0",
-      "aws-sdk": "^2.590.0",
+      "aws-sdk": "^2.812.0",
       "axios": "^0.19.2",
       "bcryptjs": "^2.4.3",
       "class-validator": "^0.9.1",
@@ -58,16 +59,18 @@ npm manifest:
       "dataloader": "^2.0.0",
       "dbmate": "^1.0.0",
       "dlv": "^1.1.3",
+      "dom-parser": "^0.1.6",
       "dotenv": "^7.0.0",
       "express": "^4.16.4",
       "express-session": "^1.15.6",
       "graphql": "^14.2.0",
       "graphql-query-complexity": "^0.2.3",
       "graphql-redis-subscriptions": "^2.1.2",
+      "graphql-subscriptions": "1.0.0",
       "http": "^0.0.0",
       "install": "^0.13.0",
       "internal-ip": "^5.0.0",
-      "ioredis": "^4.9.0",
+      "ioredis": "4.19.4",
       "nodemailer": "^6.0.0",
       "pg": "^7.9.0",
       "pgtools": "^0.3.0",
@@ -76,13 +79,15 @@ npm manifest:
       "reflect-metadata": "^0.1.13",
       "type-graphql": "^0.17.1",
       "typeorm": "0.2.21",
-      "uuid": "^3.3.2"
+      "uuid": "^3.3.2",
+      "xmldom": "^0.4.0"
     },
     "devDependencies": {
       "@types/bcryptjs": "^2.4.2",
       "@types/connect-redis": "^0.0.9",
       "@types/cors": "^2.8.4",
       "@types/dlv": "^1.1.2",
+      "@types/dom-parser": "^0.1.1",
       "@types/dotenv": "^6.1.1",
       "@types/express": "^4.16.1",
       "@types/express-session": "^1.15.12",
@@ -93,6 +98,7 @@ npm manifest:
       "@types/nodemailer": "^4.6.7",
       "@types/pino": "^5.14.0",
       "@types/uuid": "^3.4.4",
+      "@types/xmldom": "^0.1.30",
       "casual": "^1.6.0",
       "chalk": "^2.4.2",
       "jest": "^24.5.0",
@@ -575,6 +581,11 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/@types/dlv/-/dlv-1.1.2.tgz#02d4fcc41c5f707753427867c64fdae543031fb9"
     integrity sha512-OyiZ3jEKu7RtGO1yp9oOdK0cTwZ/10oE9PDJ6fyN3r9T5wkyOcvr6awdugjYdqF6KVO5eUvt7jx7rk2Eylufow==
   
+  "@types/dom-parser@^0.1.1":
+    version "0.1.1"
+    resolved "https://registry.yarnpkg.com/@types/dom-parser/-/dom-parser-0.1.1.tgz#e72d5b2846ce8c2b48b12314c73af458fcbde5df"
+    integrity sha512-/kFdfefUzcrPclXoo86+31GN6Ww/UhzrC4U7eiW/M6mTNOfzgEl8etv7AtmkoelpYDE4EoUAwZIt5x1D693CaA==
+  
   "@types/dotenv@^6.1.1":
     version "6.1.1"
     resolved "https://registry.yarnpkg.com/@types/dotenv/-/dotenv-6.1.1.tgz#f7ce1cc4fe34f0a4373ba99fefa437b0bec54b46"
@@ -812,6 +823,11 @@ Lockfile:
     dependencies:
       "@types/events" "*"
       "@types/node" "*"
+  
+  "@types/xmldom@^0.1.30":
+    version "0.1.30"
+    resolved "https://registry.yarnpkg.com/@types/xmldom/-/xmldom-0.1.30.tgz#d36d9a7d64af4693d3b18d5dc02ce432a95be12e"
+    integrity sha512-edqgAFXMEtVvaBZ3YnhamvmrHjoYpuxETmnb0lbTZmf/dXpAsO9ZKotUO4K2rn2SIZBDFCMOuA7fOe0H6dRZcA==
   
   "@types/yargs@^12.0.2", "@types/yargs@^12.0.9":
     version "12.0.10"
@@ -1249,19 +1265,12 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
     integrity sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==
   
-  aws-cloudfront-sign@^2.2.0:
-    version "2.2.0"
-    resolved "https://registry.yarnpkg.com/aws-cloudfront-sign/-/aws-cloudfront-sign-2.2.0.tgz#3910f5a6d0d90fec07f2b4ef8ab07f3eefb5625d"
-    integrity sha1-ORD1ptDZD+wH8rTvirB/Pu+1Yl0=
+  aws-sdk@^2.812.0:
+    version "2.812.0"
+    resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.812.0.tgz#c7dc1690eb8df4d66e039a524487136254e81694"
+    integrity sha512-8usszPY2AGtC0+bO2iJY9u3DILsW8g+zzfumYQxQqMTc0C4vMJKi52Yuh22mP9Nm1DCNfFlHNbdQMJfKlRLaTA==
     dependencies:
-      lodash "^3.6.0"
-  
-  aws-sdk@^2.590.0:
-    version "2.590.0"
-    resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.590.0.tgz#1c2496a3f1e7ea57ada696989bee60b04f0453d7"
-    integrity sha512-cdH3B/IuEuds84zRvi52WEW0UXOjsyl9hEkdbS2Uo8P7pWepaKTOZ3BKIUsy/lXen0nHcRWDCHeUkBwNW1Q2bg==
-    dependencies:
-      buffer "4.9.1"
+      buffer "4.9.2"
       events "1.1.1"
       ieee754 "1.1.13"
       jmespath "0.15.0"
@@ -1485,10 +1494,10 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/buffer-writer/-/buffer-writer-2.0.0.tgz#ce7eb81a38f7829db09c873f2fbb792c0c98ec04"
     integrity sha512-a7ZpuTZU1TRtnwyCNW3I5dc0wWNC3VR9S++Ewyk2HHZdrO3CQJqSpd+95Us590V6AL7JqUAH2IwZ/398PmNFgw==
   
-  buffer@4.9.1:
-    version "4.9.1"
-    resolved "https://registry.yarnpkg.com/buffer/-/buffer-4.9.1.tgz#6d1bb601b07a4efced97094132093027c95bc298"
-    integrity sha1-bRu2AbB6TvztlwlBMgkwJ8lbwpg=
+  buffer@4.9.2:
+    version "4.9.2"
+    resolved "https://registry.yarnpkg.com/buffer/-/buffer-4.9.2.tgz#230ead344002988644841ab0244af8c44bbe3ef8"
+    integrity sha512-xq+q3SRMOxGivLhBNaUdC64hDTQwejJ+H0T/NB1XMtTVEwNTrfFF3gAxiyW0Bu/xWEGhjVKgUcMhCrUy2+uCWg==
     dependencies:
       base64-js "^1.0.2"
       ieee754 "^1.1.4"
@@ -1733,11 +1742,6 @@ Lockfile:
       string-width "^2.1.1"
       strip-ansi "^4.0.0"
       wrap-ansi "^2.0.0"
-  
-  cluster-key-slot@^1.0.6:
-    version "1.0.12"
-    resolved "https://registry.yarnpkg.com/cluster-key-slot/-/cluster-key-slot-1.0.12.tgz#d5deff2a520717bc98313979b687309b2d368e29"
-    integrity sha512-21O0kGmvED5OJ7ZTdqQ5lQQ+sjuez33R+d35jZKLwqUb5mqcPHUsxOSzj61+LHVtxGZd1kShbQM3MjB/gBJkVg==
   
   cluster-key-slot@^1.1.0:
     version "1.1.0"
@@ -2034,9 +2038,9 @@ Lockfile:
       ms "2.0.0"
   
   debug@^3.1.0:
-    version "3.2.6"
-    resolved "https://registry.yarnpkg.com/debug/-/debug-3.2.6.tgz#e83d17de16d8a7efb7717edbe5fb10135eee629b"
-    integrity sha512-mel+jf7nrtEl5Pn1Qx46zARXKDpBbvzezse7p7LqINmdoIk8PYP5SySaxEmYv6TZ0JyEKA1hsCId6DIhgITtWQ==
+    version "3.2.7"
+    resolved "https://registry.yarnpkg.com/debug/-/debug-3.2.7.tgz#72580b7e9145fb39b6676f9c5e5fb100b934179a"
+    integrity sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==
     dependencies:
       ms "^2.1.1"
   
@@ -2121,9 +2125,9 @@ Lockfile:
     integrity sha1-hMbhWbgZBP3KWaDvRM2HDTElD5o=
   
   denque@^1.1.0:
-    version "1.4.0"
-    resolved "https://registry.yarnpkg.com/denque/-/denque-1.4.0.tgz#79e2f0490195502107f24d9553f374837dabc916"
-    integrity sha512-gh513ac7aiKrAgjiIBWZG0EASyDF9p4JMWwKA8YU5s9figrL5SRNEMT6FDynsegakuhWd1wVqTvqvqAoDxw7wQ==
+    version "1.4.1"
+    resolved "https://registry.yarnpkg.com/denque/-/denque-1.4.1.tgz#6744ff7641c148c3f8a69c307e51235c1f4a37cf"
+    integrity sha512-OfzPuSZKGcgr96rf1oODnfjqBFmr1DVoc/TrItj3Ohe0Ah1C5WX5Baquw/9U9KovnQ88EqmJbD66rKYUQYN1tQ==
   
   depd@~1.1.1, depd@~1.1.2:
     version "1.1.2"
@@ -2171,6 +2175,11 @@ Lockfile:
     version "1.1.3"
     resolved "https://registry.yarnpkg.com/dlv/-/dlv-1.1.3.tgz#5c198a8a11453596e751494d49874bc7732f2e79"
     integrity sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==
+  
+  dom-parser@^0.1.6:
+    version "0.1.6"
+    resolved "https://registry.yarnpkg.com/dom-parser/-/dom-parser-0.1.6.tgz#696c633b535ab3291424eb5bf58ee426f64632ca"
+    integrity sha512-3nVRKbLEwmGfghLoeT1dxlK/0votalnOfasP+8VCHYDfDuCETY4LeMblfOeqww6XZk2ymZ1Uewy/hVad6Dy3yw==
   
   domexception@^1.0.1:
     version "1.0.1"
@@ -2677,11 +2686,6 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/flatstr/-/flatstr-1.0.12.tgz#c2ba6a08173edbb6c9640e3055b95e287ceb5931"
     integrity sha512-4zPxDyhCyiN2wIAtSLI6gc82/EjqZc1onI4Mz/l0pWrAlsSfYH/2ZIcU+e3oA2wDwbzIWNKwa23F8rh6+DRWkw==
   
-  flexbuffer@0.0.6:
-    version "0.0.6"
-    resolved "https://registry.yarnpkg.com/flexbuffer/-/flexbuffer-0.0.6.tgz#039fdf23f8823e440c38f3277e6fef1174215b30"
-    integrity sha1-A5/fI/iCPkQMOPMnfm/vEXQhWzA=
-  
   follow-redirects@1.5.10:
     version "1.5.10"
     resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.5.10.tgz#7b7a9f9aea2fdff36786a94ff643ed07f4ff5e2a"
@@ -2904,7 +2908,7 @@ Lockfile:
     optionalDependencies:
       ioredis "^4.6.3"
   
-  graphql-subscriptions@^1.0.0:
+  graphql-subscriptions@1.0.0, graphql-subscriptions@^1.0.0:
     version "1.0.0"
     resolved "https://registry.yarnpkg.com/graphql-subscriptions/-/graphql-subscriptions-1.0.0.tgz#475267694b3bd465af6477dbab4263a3f62702b8"
     integrity sha512-+ytmryoHF1LVf58NKEaNPRUzYyXplm120ntxfPcgOBC7TnK7Tv/4VRHeh4FAR9iL+O1bqhZs4nkibxQ+OA5cDQ==
@@ -3232,6 +3236,22 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-2.0.0.tgz#7393f5afa59ec9ff5f67a27620d11c226e3eec02"
     integrity sha512-wPVv/y/QQ/Uiirj/vh3oP+1Ww+AWehmi1g5fFWGPF6IpCBCDVrhgHRMvrLfdYcwDh3QJbGXDW4JAuzxElLSqKA==
   
+  ioredis@4.19.4:
+    version "4.19.4"
+    resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-4.19.4.tgz#11112005f87ad3acac247ada3b22eb31b947f7c7"
+    integrity sha512-3haQWw9dpEjcfVcRktXlayVNrrqvvc2io7Q/uiV2UsYw8/HC2YwwJr78Wql7zu5bzwci0x9bZYA69U7KkevAvw==
+    dependencies:
+      cluster-key-slot "^1.1.0"
+      debug "^4.1.1"
+      denque "^1.1.0"
+      lodash.defaults "^4.2.0"
+      lodash.flatten "^4.4.0"
+      p-map "^2.1.0"
+      redis-commands "1.6.0"
+      redis-errors "^1.2.0"
+      redis-parser "^3.0.0"
+      standard-as-callback "^2.0.1"
+  
   ioredis@^4.6.3:
     version "4.14.1"
     resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-4.14.1.tgz#b73ded95fcf220f106d33125a92ef6213aa31318"
@@ -3243,22 +3263,6 @@ Lockfile:
       lodash.defaults "^4.2.0"
       lodash.flatten "^4.4.0"
       redis-commands "1.5.0"
-      redis-errors "^1.2.0"
-      redis-parser "^3.0.0"
-      standard-as-callback "^2.0.1"
-  
-  ioredis@^4.9.0:
-    version "4.9.0"
-    resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-4.9.0.tgz#0c52de498363309ebd48b5f6695d9d432b0f6669"
-    integrity sha512-YzfCLsN++Ct43QqGK9CWxaEK6OUvJ7rnENieAPNw3DVp/oF2uBrP2NJChbhO74Ng3LWA+i5zdIEUsZYr6dKDIQ==
-    dependencies:
-      cluster-key-slot "^1.0.6"
-      debug "^3.1.0"
-      denque "^1.1.0"
-      flexbuffer "0.0.6"
-      lodash.defaults "^4.2.0"
-      lodash.flatten "^4.4.0"
-      redis-commands "1.4.0"
       redis-errors "^1.2.0"
       redis-parser "^3.0.0"
       standard-as-callback "^2.0.1"
@@ -4315,11 +4319,6 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/lodash.toarray/-/lodash.toarray-4.4.0.tgz#24c4bfcd6b2fba38bfd0594db1179d8e9b656561"
     integrity sha1-JMS/zWsvuji/0FlNsRedjptlZWE=
   
-  lodash@^3.6.0:
-    version "3.10.1"
-    resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
-    integrity sha1-W/Rejkm6QYnhfUgnid/RW9FAt7Y=
-  
   lodash@^4.17.11:
     version "4.17.11"
     resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.11.tgz#b39ea6229ef607ecd89e2c8df12536891cac9b8d"
@@ -4624,10 +4623,15 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
     integrity sha1-VgiurfwAvmwpAd9fmGF4jeDVl8g=
   
-  ms@2.1.1, ms@^2.1.1:
+  ms@2.1.1:
     version "2.1.1"
     resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.1.tgz#30a5864eb3ebb0a66f2ebe6d727af06a09d86e0a"
     integrity sha512-tgp+dl5cGk28utYktBsrFqA7HKgrhgPsg6Z/EfhWI4gl1Hwq8B/GmY/0oXZ6nF8hDVesS/FpnYaD/kOWhYQvyg==
+  
+  ms@^2.1.1:
+    version "2.1.3"
+    resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
+    integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
   
   mz@^2.4.0:
     version "2.7.0"
@@ -5090,6 +5094,11 @@ Lockfile:
     integrity sha512-x+12w/To+4GFfgJhBEpiDcLozRJGegY+Ei7/z0tSLkMmxGZNybVMSfWj9aJn8Z5Fc7dBUNJOOVgPv2H7IwulSQ==
     dependencies:
       p-limit "^2.0.0"
+  
+  p-map@^2.1.0:
+    version "2.1.0"
+    resolved "https://registry.yarnpkg.com/p-map/-/p-map-2.1.0.tgz#310928feef9c9ecc65b68b17693018a665cea175"
+    integrity sha512-y3b8Kpd8OAN444hxfBbFfj1FY/RjtTd8tzYwhUqNYXx0fXx2iX4maP4Qr6qhIKbQXI02wTLAda4fYUbDagTUFw==
   
   p-reduce@^1.0.0:
     version "1.0.0"
@@ -5681,15 +5690,20 @@ Lockfile:
     dependencies:
       esprima "~4.0.0"
   
-  redis-commands@1.4.0, redis-commands@^1.2.0:
-    version "1.4.0"
-    resolved "https://registry.yarnpkg.com/redis-commands/-/redis-commands-1.4.0.tgz#52f9cf99153efcce56a8f86af986bd04e988602f"
-    integrity sha512-cu8EF+MtkwI4DLIT0x9P8qNTLFhQD4jLfxLR0cCNkeGzs87FN6879JOJwNQR/1zD7aSYNbU0hgsV9zGY71Itvw==
-  
   redis-commands@1.5.0:
     version "1.5.0"
     resolved "https://registry.yarnpkg.com/redis-commands/-/redis-commands-1.5.0.tgz#80d2e20698fe688f227127ff9e5164a7dd17e785"
     integrity sha512-6KxamqpZ468MeQC3bkWmCB1fp56XL64D4Kf0zJSwDZbVLLm7KFkoIcHrgRvQ+sk8dnhySs7+yBg94yIkAK7aJg==
+  
+  redis-commands@1.6.0:
+    version "1.6.0"
+    resolved "https://registry.yarnpkg.com/redis-commands/-/redis-commands-1.6.0.tgz#36d4ca42ae9ed29815cdb30ad9f97982eba1ce23"
+    integrity sha512-2jnZ0IkjZxvguITjFTrGiLyzQZcTvaw8DAaCXxZq/dsHXz7KfMQ3OUJy7Tz9vnRtZRVz6VRCPDvruvU8Ts44wQ==
+  
+  redis-commands@^1.2.0:
+    version "1.4.0"
+    resolved "https://registry.yarnpkg.com/redis-commands/-/redis-commands-1.4.0.tgz#52f9cf99153efcce56a8f86af986bd04e988602f"
+    integrity sha512-cu8EF+MtkwI4DLIT0x9P8qNTLFhQD4jLfxLR0cCNkeGzs87FN6879JOJwNQR/1zD7aSYNbU0hgsV9zGY71Itvw==
   
   redis-errors@^1.0.0, redis-errors@^1.2.0:
     version "1.2.0"
@@ -7064,6 +7078,11 @@ Lockfile:
     version "9.0.7"
     resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-9.0.7.tgz#132ee63d2ec5565c557e20f4c22df9aca686b10d"
     integrity sha1-Ey7mPS7FVlxVfiD0wi35rKaGsQ0=
+  
+  xmldom@^0.4.0:
+    version "0.4.0"
+    resolved "https://registry.yarnpkg.com/xmldom/-/xmldom-0.4.0.tgz#8771e482a333af44587e30ce026f0998c23f3830"
+    integrity sha512-2E93k08T30Ugs+34HBSTQLVtpi6mCddaY8uO+pMNk1pqSjV5vElzn4mmh6KLxN3hki8rNcHSYzILoh3TEWORvA==
   
   xtend@^4.0.0:
     version "4.0.1"
