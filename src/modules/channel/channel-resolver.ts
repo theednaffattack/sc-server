@@ -33,7 +33,7 @@ import { createFile } from "./channel-helpers/create-file";
 import { createMessageWithoutFile } from "./channel-helpers/create-message-without-file";
 import { Thread } from "../../entity/Thread";
 import { AddThreadPayload } from "./add-thread-payload";
-import { deserialize } from "./deserialize-message";
+// import { deserialize } from "./deserialize-message";
 // import { AddDirectMessagePayloadType } from "../direct-messages/direct-messages-resolver";
 
 enum Topic {
