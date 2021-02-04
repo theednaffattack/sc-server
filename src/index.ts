@@ -182,11 +182,7 @@ const main = async () => {
   const app = Express.default();
 
   const allowedListOfOrigins = nodeEnvIsProd
-    ? [
-        `${process.env.PRODUCTION_CLIENT_URI}`,
-        `${process.env.PRODUCTION_API_URI}`,
-        `${process.env.GRAPHQL_ENDPOINT}`,
-      ]
+    ? [`${process.env.PRODUCTION_CLIENT_URI}`]
     : [
         "http://localhost:3000",
         "http://localhost:4000",
@@ -212,20 +208,20 @@ const main = async () => {
   // in non-production environments
   if (nodeEnvIsProd) {
     sessionMiddleware = session({
+      cookie: {
+        httpOnly: true,
+        secure: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
+        domain: process.env.PRODUCTION_CLIENT_ORIGIN,
+      },
       name: process.env.COOKIE_NAME,
+      resave: false,
+      saveUninitialized: false,
       secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis as any,
         prefix: redisSessionPrefix,
       }),
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        secure: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
-        domain: process.env.PRODUCTION_API_ORIGIN,
-      },
     });
   } else {
     sessionMiddleware = session({
