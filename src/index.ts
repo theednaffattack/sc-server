@@ -213,6 +213,7 @@ const main = async () => {
         secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
         domain: process.env.PRODUCTION_CLIENT_ORIGIN,
+        path: "/",
       },
       name: process.env.COOKIE_NAME,
       resave: false,
