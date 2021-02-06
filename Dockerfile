@@ -25,8 +25,8 @@ FROM node:12.16.2-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY package*.json ./
-RUN yarn install --frozen-lockfile --production
+# COPY package*.json ./
+# RUN yarn install --frozen-lockfile --production
 # RUN npm ci --quiet --only=production
 
 ## We just need the build to execute the command
@@ -37,6 +37,8 @@ COPY --from=builder /usr/src/app/certs ./certs
 
 # Inform Docker that the container is listening on the specified port at runtime.
 # EXPOSE 6000
+
+USER node
 
 # start the app 
 CMD ["node", "/app/dist/index.js"]
