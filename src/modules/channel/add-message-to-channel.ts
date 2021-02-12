@@ -115,7 +115,7 @@ export class AddMessageToChannelResolver {
         sentBy,
       });
       console.log(
-        "VIEW REURN OBJECT INSIDE ADD MESSAGE TO CHANNEL (if files and sentBy and receiver === true)",
+        "VIEW RETURN OBJECT INSIDE ADD MESSAGE TO CHANNEL (if files and sentBy and receiver === true)",
         { returnObj }
       );
 
