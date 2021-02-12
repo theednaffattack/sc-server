@@ -69,10 +69,15 @@ const main = async () => {
   // trying until
   while (retries) {
     try {
-      await runMigrations();
-      // If the migrations run successfully,
-      // exit the while loop.
-      break;
+      if (process.env.NODE_ENV === "production") {
+        await runMigrations();
+        // If the migrations run successfully,
+        // exit the while loop.
+        break;
+      } else {
+        console.log("SKIP MIGRATIONS - DEV ENV");
+        break;
+      }
     } catch (error) {
       console.error("SOME KIND OF ERROR CONNECTING OCCURRED\n", {
         error,
