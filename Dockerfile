@@ -5,6 +5,7 @@
 FROM node:12.16.2 AS builder
 
 WORKDIR /usr/src/app
+# ENV YARN_CACHE_FOLDER=/dev/shm/yarn_cache
 
 COPY package*.json ./
 COPY tsconfig*.json ./
@@ -30,6 +31,7 @@ ENV NODE_ENV=production
 # RUN npm ci --quiet --only=production
 
 ## We just need the build to execute the command
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/db/migrations ./db/migrations
 COPY --from=builder /usr/src/app/certs ./certs
