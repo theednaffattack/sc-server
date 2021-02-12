@@ -31,7 +31,7 @@ docker push theednaffattack/sc-server:prod
 Combined build and push
 
 ```bash
-docker build -t theednaffattack/sc-server:production . && docker push theednaffattack/sc-server:production
+docker build  --shm-size 1G -t theednaffattack/sc-server:production . && docker push theednaffattack/sc-server:production
 ```
 
 ```bash
