@@ -11,6 +11,9 @@ export class AddThreadPayload {
   @Field(() => ID)
   channelId: string;
 
+  @Field(() => Date, { nullable: true })
+  created_at: Date;
+
   @Field(() => ID)
   threadId: string;
 
