@@ -67,7 +67,7 @@ export interface DataAddMessageToChannelInput {
 
 @Resolver()
 export class ChannelResolver {
-  @Subscription(() => Message, {
+  @Subscription(() => AddThreadPayload, {
     topics: [Topic.NewChannelMessage],
     filter: ({
       args,
@@ -88,23 +88,12 @@ export class ChannelResolver {
     },
   })
   newMessageSub(
-    @Root() messagePayload: AddMessagePayload,
+    @Root() messagePayload: AddThreadPayload,
     @Arg("data") data: AddMessageToChannelInput
-  ): Message {
-    console.log("NEW MESSAGE SUB, MESSAGE PAYLOAD", {
-      data,
-      messagePayload,
-      messagePayload_created_at: messagePayload.message.created_at,
-    });
+  ): AddThreadPayload {
+    console.log("VIEW MESSAGE SUB DATA", { data, messagePayload });
 
-    // let returnObj = {
-    //   id: messagePayload.message.id,
-    //   message: messagePayload.message.message,
-    //   sentBy: messagePayload.user,
-    //   __typename: "Message"
-    // };
-
-    return messagePayload.message;
+    return messagePayload;
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
@@ -240,6 +229,7 @@ export class ChannelResolver {
     } = propThread;
     let {
       id: idMessage,
+
       // created_at: createdAtMessage,
       // updated_at: updatedAtMessage,
     } = propMessage;
@@ -303,7 +293,7 @@ export class ChannelResolver {
       .where("message.id = :messageId", { messageId: idMessage })
       .getOne();
 
-    await Thread.createQueryBuilder("thread")
+    let fullThread = await Thread.createQueryBuilder("thread")
       .leftJoinAndSelect("thread.team", "team")
       .where("thread.id = :threadId", { threadId: idThread })
       .getOne();
@@ -322,10 +312,11 @@ export class ChannelResolver {
       .where("user.id = :userId", { userId })
       .getOne();
 
-    if (fullNewMessage && sentBy) {
+    if (fullNewMessage && sentBy && fullThread) {
       await publish({
-        invitees: dmInvitees,
         channelId,
+        created_at: fullThread.created_at,
+        invitees: dmInvitees,
         message: fullNewMessage,
         success: true,
         threadId: idThread,
@@ -333,8 +324,9 @@ export class ChannelResolver {
       });
 
       return {
-        invitees: dmInvitees,
         channelId,
+        created_at: fullThread.created_at,
+        invitees: dmInvitees,
         message: fullNewMessage,
         success: true,
         threadId: idThread,
