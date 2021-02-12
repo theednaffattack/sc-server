@@ -40,8 +40,16 @@ redis.on("error", redisError);
 
 redis.on("ready", redisReady);
 
+const pubRedis = nodeEnvIs_NOT_Prod
+  ? new Redis(developmentOptions)
+  : new Redis(productionOptions);
+
+const subRedis = nodeEnvIs_NOT_Prod
+  ? new Redis(developmentOptions)
+  : new Redis(productionOptions);
+
 export const pubsub = new RedisPubSub({
   // ...,
-  publisher: redis,
-  subscriber: redis,
+  publisher: pubRedis,
+  subscriber: subRedis,
 });
