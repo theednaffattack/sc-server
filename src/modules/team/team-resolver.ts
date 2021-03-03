@@ -242,8 +242,12 @@ export class UserTeamResolver {
   @Mutation(() => TeamResponse)
   async createTeam(
     @Arg("name", () => String) name: string,
-    @Ctx() { userId }: MyContext
+    @Ctx() { payload }: MyContext
   ): Promise<TeamResponse> {
+    const userId = payload?.userId;
+    if (!userId) {
+      throw new Error("User ID is undefined");
+    }
     if (!name || name.length < 2) {
       return {
         errors: [
@@ -384,17 +388,20 @@ export class UserTeamResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
   @Query(() => [UserToTeam])
   async getAllTeamsForUser(
-    @Ctx() { userId }: MyContext
+    @Ctx() { payload }: MyContext
   ): Promise<UserToTeam[]> {
-    const getAllTeamsForUser = await Team.createQueryBuilder("team")
-      .select()
-      .leftJoinAndSelect("team.members", "member")
-      .leftJoinAndSelect("team.channels", "channel")
-      .leftJoinAndSelect("team.userToTeams", "userToTeams")
-      .where("member.id = :userId", { userId })
-      .getMany();
+    const userId = payload?.userId;
+    if (!userId) {
+      throw new Error("User ID is undefined.");
+    }
+    // const getAllTeamsForUser = await Team.createQueryBuilder("team")
+    //   .select()
+    //   .leftJoinAndSelect("team.members", "member")
+    //   .leftJoinAndSelect("team.channels", "channel")
+    //   .leftJoinAndSelect("team.userToTeams", "userToTeams")
+    //   .where("member.id = :userId", { userId })
+    //   .getMany();
 
-    // BELOW IS *NOT* WORKING
     const getAllTeamsForUserToo = await UserToTeam.createQueryBuilder("utt")
       .select()
       .where("utt.userId = :userId", { userId })
@@ -405,7 +412,11 @@ export class UserTeamResolver {
           `Error loading UserToTeam\n${inspect(error, false, 4, true)}`
         );
       });
-    console.log("", { userId, getAllTeamsForUser, getAllTeamsForUserToo });
+    console.log("OOF CHECK THIS", {
+      userId,
+      // getAllTeamsForUser,
+      getAllTeamsForUserToo,
+    });
 
     return getAllTeamsForUserToo;
   }
