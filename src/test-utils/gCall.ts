@@ -1,7 +1,7 @@
 import { graphql, GraphQLSchema } from "graphql";
 import Maybe from "graphql/tsutils/Maybe";
 
-import { createSchema } from "../global-utils/createSchema";
+import { createSchemaSync } from "../global-utils/createSchema";
 
 interface Options {
   source: string;
@@ -15,7 +15,7 @@ let schema: GraphQLSchema;
 
 export const gCall = async ({ source, variableValues, userId }: Options) => {
   if (!schema) {
-    schema = await createSchema();
+    schema = await createSchemaSync();
   }
   return graphql({
     schema,
@@ -24,12 +24,12 @@ export const gCall = async ({ source, variableValues, userId }: Options) => {
     contextValue: {
       req: {
         session: {
-          userId
-        }
+          userId,
+        },
       },
       res: {
-        clearCookie: () => jest.fn()
-      }
-    }
+        clearCookie: () => jest.fn(),
+      },
+    },
   });
 };
