@@ -4,20 +4,25 @@ import * as Express from "express";
 import { ArgumentValidationError } from "type-graphql";
 import { createConnection } from "typeorm";
 import { GraphQLFormattedError, GraphQLError } from "graphql";
-import session from "express-session";
-import connectRedis from "connect-redis";
+// import session from "express-session";
+// import connectRedis from "connect-redis";
 import internalIp from "internal-ip";
 import colors from "colors/safe";
 import http from "http";
 import cors, { CorsOptions as CorsOptionsProps } from "cors";
+import cookieParser from "cookie-parser";
 
-import { redis } from "./redis";
-import { redisSessionPrefix } from "./constants";
-import { createSchema } from "./global-utils/createSchema";
+// import { redis } from "./redis";
+// import { redisSessionPrefix } from "./constants";
+import { createSchemaSync } from "./global-utils/createSchema";
 import { devOrmconfig } from "./config/dev-orm-config";
 import { productionOrmConfig } from "./config/prod-orm-config";
 import { MyContext } from "./types/MyContext";
 import { runMigrations } from "./lib/util.prep-dev-database";
+import { verify } from "jsonwebtoken";
+import { User } from "./entity/User";
+import { sendRefreshToken } from "./lib/lib.send-refresh-token";
+import { createRefreshToken, createAccessToken } from "./lib/auth.jwt-auth";
 // import { createUsersLoader } from "./modules/utils/data-loaders/batch-user-loader";
 
 // interface CorsOptionsProps {
@@ -27,9 +32,9 @@ import { runMigrations } from "./lib/util.prep-dev-database";
 
 const port = process.env.VIRTUAL_PORT;
 
-const RedisStore = connectRedis(session);
+// const RedisStore = connectRedis(session);
 
-let sessionMiddleware: Express.RequestHandler;
+// let sessionMiddleware: Express.RequestHandler;
 
 // const nodeEnvIsDev = process.env.NODE_ENV === "development";
 // const nodeEnvIs_NOT_Prod = process.env.NODE_ENV !== "production";
@@ -41,18 +46,27 @@ const getContextFromHttpRequest = (
   req: MyContext["req"],
   res: MyContext["res"]
 ) => {
-  if (req && req.session) {
-    const { teamId, userId } = req.session;
-    return { userId, req, res, teamId };
-  }
-  return ["No session detected"];
+  // old cookie implementation
+  // if (req && req.session) {
+  //   const { teamId, userId } = req.session;
+
+  //   return { userId, req, res, teamId };
+  // }
+  return { req, res, token: req.headers.authorization || "" };
 };
 
 const getContextFromSubscription = (connection: any) => {
-  const { userId } = connection.context.req.session;
+  // old cookie implementation
+  // const { userId } = connection.context.req.session;
+
+  const token = connection.context.authorization || "";
+  console.log("VIEW CONNECTION CONTEXT", { ctx: connection.context, token });
+  // const payload = verify(token, process.env.JWT_SECRET!);
   return {
-    userId,
+    // userId: payload.userId,
+    token,
     req: connection.context.req,
+    res: connection.context.res,
     teamId: connection.context.teamId,
   };
 };
@@ -69,15 +83,20 @@ const main = async () => {
   // trying until
   while (retries) {
     try {
-      if (process.env.NODE_ENV === "production") {
-        await runMigrations();
-        // If the migrations run successfully,
-        // exit the while loop.
-        break;
-      } else {
-        console.log("SKIP MIGRATIONS - DEV ENV");
-        break;
-      }
+      await runMigrations();
+      // If the migrations run successfully,
+      // exit the while loop.
+      break;
+
+      // if (process.env.NODE_ENV === "production") {
+      //   await runMigrations();
+      //   // If the migrations run successfully,
+      //   // exit the while loop.
+      //   break;
+      // } else {
+      //   console.log("SKIP MIGRATIONS - DEV ENV");
+      //   break;
+      // }
     } catch (error) {
       console.error("SOME KIND OF ERROR CONNECTING OCCURRED\n", {
         error,
@@ -97,7 +116,7 @@ const main = async () => {
 
   let schema;
   try {
-    schema = await createSchema();
+    schema = await createSchemaSync();
   } catch (error) {
     console.warn("CREATE SCHEMA ERROR", error);
   }
@@ -125,13 +144,19 @@ const main = async () => {
     },
     subscriptions: {
       path: "/subscriptions",
-      onConnect: (_, ws: any) => {
-        return new Promise((res) =>
-          sessionMiddleware(ws.upgradeReq, {} as any, () => {
-            res({ req: ws.upgradeReq });
-          })
-        );
+      onConnect: (_connectionParams, _webSocket, _context) => {
+        console.log("Client connected");
       },
+      onDisconnect: (_webSocket, _context) => {
+        console.log("Client disconnected");
+      },
+      // onConnect: (_, ws: any) => {
+      //   return new Promise((res) =>
+      //     sessionMiddleware(ws.upgradeReq, {} as any, () => {
+      //       res({ req: ws.upgradeReq });
+      //     })
+      //   );
+      // },
     },
     // custom error handling from:
     // https://github.com/19majkel94/type-graphql/issues/258
@@ -188,15 +213,14 @@ const main = async () => {
 
   const allowedListOfOrigins = nodeEnvIsProd
     ? [`${process.env.PRODUCTION_CLIENT_URI}`]
-    : [
-        "http://localhost:3000",
-        "http://localhost:4000",
-        `http://${homeIp}:3000`,
-        `http://${homeIp}:${process.env.VIRTUAL_PORT}`,
-      ];
+    : [`http://${homeIp}:4040`, `http://${homeIp}:${process.env.VIRTUAL_PORT}`];
 
   const corsOptions: CorsOptionsProps = {
     credentials: true,
+    methods: "GET,HEAD,POST,OPTIONS",
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
+    // allowedHeaders:,
     origin: function (origin: any, callback: any) {
       if (!origin || allowedListOfOrigins.indexOf(origin) !== -1) {
         callback(null, true);
@@ -209,49 +233,89 @@ const main = async () => {
     },
   };
 
-  // needed to remove domain from our cookie
-  // in non-production environments
-  if (nodeEnvIsProd) {
-    sessionMiddleware = session({
-      cookie: {
-        httpOnly: true,
-        secure: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
-        domain: process.env.PRODUCTION_CLIENT_ORIGIN,
-        path: "/",
-      },
-      name: process.env.COOKIE_NAME,
-      resave: false,
-      saveUninitialized: false,
-      secret: process.env.SESSION_SECRET as string,
-      store: new RedisStore({
-        client: redis as any,
-        prefix: redisSessionPrefix,
-      }),
-    });
-  } else {
-    sessionMiddleware = session({
-      name: process.env.COOKIE_NAME,
-      secret: process.env.SESSION_SECRET as string,
-      store: new RedisStore({
-        client: redis as any,
-        prefix: redisSessionPrefix,
-      }),
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        // secure: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
-        domain: `${homeIp}`,
-      },
-    });
-  }
-
-  app.use(sessionMiddleware);
+  // old cookie implentation
+  // if (nodeEnvIsProd) {
+  //   sessionMiddleware = session({
+  //     cookie: {
+  //       httpOnly: true,
+  //       secure: true,
+  //       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
+  //       domain: process.env.PRODUCTION_CLIENT_ORIGIN,
+  //       path: "/",
+  //     },
+  //     name: process.env.COOKIE_NAME,
+  //     resave: false,
+  //     saveUninitialized: false,
+  //     secret: process.env.SESSION_SECRET as string,
+  //     store: new RedisStore({
+  //       client: redis as any,
+  //       prefix: redisSessionPrefix,
+  //     }),
+  //   });
+  // } else {
+  //   sessionMiddleware = session({
+  //     name: process.env.COOKIE_NAME,
+  //     secret: process.env.SESSION_SECRET as string,
+  //     store: new RedisStore({
+  //       client: redis as any,
+  //       prefix: redisSessionPrefix,
+  //     }),
+  //     resave: false,
+  //     saveUninitialized: false,
+  //     cookie: {
+  //       httpOnly: true,
+  //       // secure: true,
+  //       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days,
+  //       domain: `${homeIp}`,
+  //     },
+  //   });
+  // }
 
   // we're bypassing cors used by apollo-server-express here
   app.use(cors(corsOptions));
+  app.options("*", cors(corsOptions));
+
+  app.use(cookieParser());
+  // app.use(sessionMiddleware);
+
+  app.get("/", (_req, res) => res.send("hello"));
+
+  app.post("/refresh_token", async (req, res) => {
+    console.log("VIEW COOKIES", req.cookies);
+    console.log("VIEW MY COOKIE", req.cookies[process.env.COOKIE_NAME!]);
+
+    const token = req.cookies[process.env.COOKIE_NAME!];
+    if (!token) {
+      return res.send({ ok: false, accessToken: "" });
+    }
+
+    let payload: any = null;
+    try {
+      payload = verify(token, process.env.REFRESH_TOKEN_SECRET!);
+    } catch (err) {
+      console.log("TOKEN VERIFICATION ERROR", err);
+      return res.send({ ok: false, accessToken: "" });
+    }
+
+    // token is valid and
+    // we can send back an access token
+    const user = await User.findOne({ id: payload.userId });
+
+    // if we can't find a user don't send a token
+    if (!user) {
+      return res.send({ ok: false, accessToken: "" });
+    }
+
+    // check the token version to make sure don't send?
+    // seems strange
+    if (user.tokenVersion !== payload.tokenVersion) {
+      return res.send({ ok: false, accessToken: "" });
+    }
+
+    sendRefreshToken(res, createRefreshToken(user));
+
+    return res.send({ ok: true, accessToken: createAccessToken(user) });
+  });
 
   apolloServer.applyMiddleware({ app, cors: false });
 
