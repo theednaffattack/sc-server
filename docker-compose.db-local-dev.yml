@@ -2,7 +2,7 @@ version: "3.2"
 services:
   sc-db:
     container_name: ${DB_CONTAINER_NAME}
-    command: -c ssl=on -c ssl_cert_file=/var/lib/postgresql/server.crt -c ssl_key_file=/var/lib/postgresql/server.key
+    command: -c ssl=off
     image: ${SCAPI_POSTGRES_IMAGE}
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
@@ -10,11 +10,12 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DBNAME: ${POSTGRES_DBNAME}
       POSTGRES_DB: ${POSTGRES_DBNAME}
+      POSTGRES_PORT: ${POSTGRES_PORT}
       # POSTGRES_MULTIPLE_EXTENSIONS: postgis,hstore,postgis_topology,postgis_raster,pgrouting
     volumes:
-      - ${DB_PATH}:/var/lib/postgresql/12/main
-      - ${POSTGRES_SSL_PATH}/cert.pem:/var/lib/postgresql/server.crt
-      - ${POSTGRES_SSL_PATH}/key.pem:/var/lib/postgresql/server.key
+      - ./db/local-docker:/var/lib/postgresql/12/main
+      # - ${POSTGRES_SSL_PATH}/cert.pem:/var/lib/postgresql/server.crt
+      # - ${POSTGRES_SSL_PATH}/key.pem:/var/lib/postgresql/server.key
       # - ./db/postgres/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
     ports:
       - "0.0.0.0:${PG_EXTERIOR_PORT}:${POSTGRES_PORT}"
