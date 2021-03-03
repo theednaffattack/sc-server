@@ -153,6 +153,9 @@ export class User extends BaseEntity {
   @Field(() => [UserToTeam], { nullable: true })
   @OneToMany(() => UserToTeam, (userToTeam) => userToTeam.team)
   userToTeams: UserToTeam[];
+
+  @Column("int", { default: 0 })
+  tokenVersion: number;
 }
 
 @ObjectType()
@@ -173,7 +176,7 @@ export class UserClassTypeWithReferenceIds {
   @Field(() => Channel, { nullable: true })
   channels_created?: Channel;
 
-  @Field(() => Image, { nullable: "itemsAndList" })
+  @Field(() => [Image], { nullable: "itemsAndList" })
   images: Image[];
 
   @Field(() => [FileEntity], { nullable: "itemsAndList" })
@@ -226,4 +229,7 @@ export class UserClassTypeWithReferenceIds {
 
   @Field(() => [UserToTeamIdReferencesOnlyClass], { nullable: true })
   userToTeams: UserToTeamIdReferencesOnlyClass[];
+
+  @Column("int", { default: 0 })
+  tokenVersion: number;
 }
