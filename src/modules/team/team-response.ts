@@ -5,7 +5,7 @@ import { UttData } from "../../lib/gql-type.utt-data";
 
 @ObjectType()
 export class TeamResponse {
-  @Field(() => FieldError, { nullable: true })
+  @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
 
   @Field(() => UttData, { nullable: true })
