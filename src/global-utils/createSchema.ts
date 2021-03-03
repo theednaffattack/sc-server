@@ -1,4 +1,10 @@
-import { buildSchema } from "type-graphql";
+import { buildSchemaSync } from "type-graphql";
+import { SchemaDirectiveVisitor } from "graphql-tools";
+import {
+  IsAuthenticatedDirective,
+  HasRoleDirective,
+  HasScopeDirective,
+} from "../lib/lib.user-auth.directive";
 
 import { pubsub } from "../redis";
 
@@ -31,12 +37,17 @@ import { GetMyMessagesFromUserResolver } from "../modules/direct-messages/get-my
 import { UserTeamResolver } from "../modules/team/team-resolver";
 import { ChannelResolver } from "../modules/channel/channel-resolver";
 import { DirectMessageResolver } from "../modules/direct-messages/direct-messages-resolver";
+import { RevokeRefreshTokensForUserResolver } from "../modules/user/revoke-refresh-token";
 // import { AddMessageToChannelResolver } from "../modules/channel/add-message-to-channel";
 
 // const pubsub = new RedisPubSub();
 
-export const createSchema = () =>
-  buildSchema({
+export const createSchemaSync = () =>
+  buildSchemaSync({
+    authChecker: customAuthChecker,
+    dateScalarMode: "isoDate",
+    pubSub: pubsub,
+
     // alphabetical please!
     resolvers: [
       // AddMessageToChannelResolver,
@@ -58,14 +69,12 @@ export const createSchema = () =>
       MeResolver,
       ProfilePictureResolver,
       RegisterResolver,
+      RevokeRefreshTokensForUserResolver,
       SignS3,
       SignS3Files,
       SignS3GetObject,
       UserTeamResolver,
     ],
-    pubSub: pubsub,
-    authChecker: customAuthChecker,
-    dateScalarMode: "isoDate",
     // ({ context: { req } }) => {
     //   // I can read context here
     //   // check permission vs what's in the db "roles" argument
@@ -73,3 +82,45 @@ export const createSchema = () =>
     //   return !!req.session.userId;
     // }
   });
+
+// register the used directives implementations
+SchemaDirectiveVisitor.visitSchemaDirectives(
+  buildSchemaSync({
+    authChecker: customAuthChecker,
+    dateScalarMode: "isoDate",
+    pubSub: pubsub,
+
+    // alphabetical please!
+    resolvers: [
+      // AddMessageToChannelResolver,
+      AdminEditUserInfoResolver,
+      ChangePasswordFromContextUseridResolver,
+      ChangePasswordFromTokenResolver,
+      ChannelResolver,
+      ConfirmUserResolver,
+      CreateProductResolver,
+      CreateUserResolver,
+      DirectMessageResolver,
+      EditUserInfoResolver,
+      ForgotPasswordResolver,
+      GetAllMessagesResolver,
+      GetListToCreateThread,
+      GetMyMessagesFromUserResolver,
+      LoginResolver,
+      LogoutResolver,
+      MeResolver,
+      ProfilePictureResolver,
+      RegisterResolver,
+      RevokeRefreshTokensForUserResolver,
+      SignS3,
+      SignS3Files,
+      SignS3GetObject,
+      UserTeamResolver,
+    ],
+  }),
+  {
+    isAuthenticated: IsAuthenticatedDirective,
+    hasRole: HasRoleDirective,
+    hasScope: HasScopeDirective,
+  }
+);
