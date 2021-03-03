@@ -14,5 +14,6 @@ export interface MyContext {
   req: Request;
   res: Response;
   next: NextFunction;
-  usersLoader: any;
+  usersLoader?: any;
+  payload?: { userId: string };
 }
