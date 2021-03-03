@@ -630,7 +630,7 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Authorized("ADMIN", "OWNER", "MEMBER")
+  // @Authorized("ADMIN", "OWNER", "MEMBER")
   @Query(() => [Channel])
   async loadChannelsByTeamId(
     // @Ctx() { userId }: MyContext,
