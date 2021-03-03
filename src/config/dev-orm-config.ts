@@ -4,7 +4,7 @@ export const devOrmconfig: PostgresConnectionOptions = {
   name: "default",
   type: "postgres",
   host: "10.0.0.188",
-  port: 5432,
+  port: process.env.PG_DB_PORT ? parseInt(process.env.PG_DB_PORT) : 5432,
   ssl: false,
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASS,
