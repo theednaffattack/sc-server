@@ -91,9 +91,38 @@ export class ChannelResolver {
     @Root() messagePayload: AddThreadPayload,
     @Arg("data") data: AddMessageToChannelInput
   ): AddThreadPayload {
-    console.log("VIEW MESSAGE SUB DATA", { data, messagePayload });
+    // desctructure for easier use
+    const {
+      channelId,
+      created_at,
+      invitees,
+      message,
+      sentBy,
+      success,
+      threadId,
+    } = messagePayload;
 
-    return messagePayload;
+    const transformDatesForRedis: AddThreadPayload = {
+      channelId,
+      created_at: new Date(created_at),
+      invitees,
+      message: {
+        ...message,
+        created_at: new Date(message.created_at!),
+        updated_at: new Date(message.updated_at!),
+      },
+      sentBy,
+      success,
+      threadId,
+    };
+
+    console.log("VIEW MESSAGE SUB DATA", {
+      data,
+      messagePayload,
+      transformDatesForRedis,
+    });
+
+    return transformDatesForRedis;
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
@@ -113,7 +142,7 @@ export class ChannelResolver {
   @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => AddMessagePayload)
   async addMessageToChannel(
-    @Ctx() { userId }: MyContext,
+    @Ctx() ctx: MyContext,
     @Arg("data")
     { channelId, teamId, files, message }: AddMessageToChannelInput,
     @PubSub(Topic.NewChannelMessage) publish: Publisher<AddMessagePayload>
@@ -121,11 +150,11 @@ export class ChannelResolver {
     console.log("\n\n✅✅✅\n\nmandatory usage\n".toUpperCase(), { teamId });
     console.log("\n\n✅✅✅\n");
     const sentBy = await User.createQueryBuilder("user")
-      .where("user.id = :id", { id: userId })
+      .where("user.id = :id", { id: ctx.payload?.token?.userId })
       .getOne();
 
     const receiver = await User.createQueryBuilder("user")
-      .where("user.id = :id", { id: userId })
+      .where("user.id = :id", { id: ctx.payload?.token?.userId })
       .getOne();
 
     // let existingChannel;
@@ -186,7 +215,7 @@ export class ChannelResolver {
   @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => AddThreadPayload)
   async addThreadToChannel(
-    @Ctx() { userId }: MyContext,
+    @Ctx() ctx: MyContext,
     @Arg("data")
     {
       channelId,
@@ -199,6 +228,14 @@ export class ChannelResolver {
     @PubSub(Topic.NewChannelMessage)
     publish: Publisher<AddThreadPayload>
   ): Promise<AddThreadPayload> {
+    console.log("VIEW ADD THREAD PAYLOAD", {
+      channelId,
+      invitees,
+      teamId,
+      // files,
+      message: message_text,
+    });
+
     // Create a new Thread
     let { raw: rawThread } = await Thread.createQueryBuilder("thread")
       .insert()
@@ -208,7 +245,9 @@ export class ChannelResolver {
     // Create a new Message as well
     let { raw: rawMessage } = await Message.createQueryBuilder("message")
       .insert()
-      .values([{ message: message_text, sentBy: { id: userId } }])
+      .values([
+        { message: message_text, sentBy: { id: ctx.payload?.token?.userId } },
+      ])
       .execute();
 
     let [propThread] = rawThread;
@@ -309,7 +348,7 @@ export class ChannelResolver {
     //   .loadOne();
 
     let sentBy = await User.createQueryBuilder("user")
-      .where("user.id = :userId", { userId })
+      .where("user.id = :userId", { userId: ctx.payload?.token?.userId })
       .getOne();
 
     if (fullNewMessage && sentBy && fullThread) {
@@ -429,14 +468,14 @@ export class ChannelResolver {
   }
 
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Authorized("ADMIN", "OWNER", "MEMBER")
+  // @Authorized("ADMIN", "OWNER", "MEMBER")
   @Mutation(() => Channel)
   async createChannel(
     @Arg("input") { teamId, name }: AddChannelInput,
-    @Ctx() { userId }: MyContext
-  ): // @Arg("name", () => String) name: string,
-  // @Arg("teamId", () => String) teamId: string
-  Promise<Channel | undefined> {
+    @Ctx() ctx: MyContext
+  ): Promise<Channel | undefined> {
+    console.log("IS THIS WORKING??");
+
     const existingTeam = await Team.createQueryBuilder("team")
       .where("team.id = :teamId", { teamId })
       .getOne();
@@ -459,7 +498,7 @@ export class ChannelResolver {
       await Channel.createQueryBuilder("channel")
         .relation("channel", "invitees")
         .of(id)
-        .add(userId)
+        .add(ctx.payload?.token?.userId)
         .catch((error) => console.error(error));
 
       const newChannel = await Channel.createQueryBuilder("channel")
