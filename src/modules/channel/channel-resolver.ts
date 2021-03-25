@@ -91,7 +91,7 @@ export class ChannelResolver {
     @Root() messagePayload: AddThreadPayload,
     @Arg("data") data: AddMessageToChannelInput
   ): AddThreadPayload {
-    // desctructure for easier use
+    console.log("MANDATORY USAGE - ADD MESSAGE TO CHANNEL INPUT", data);
     const {
       channelId,
       created_at,
