@@ -1,4 +1,4 @@
-const env = process.env.NODE_ENV; // 'dev' or 'test'
+const env = process.env.NODE_ENV ?? ""; // 'dev' or 'test'
 
 const dev = {
   app: {
@@ -39,4 +39,14 @@ const config = {
   test,
 };
 
-export default config[env];
+function testEnvVar(env: keyof typeof config | undefined): keyof typeof config {
+  if (env === null || env === undefined) {
+    throw new Error("env is undefined");
+  } else {
+    return env;
+  }
+}
+
+const testedEnv = testEnvVar(env);
+
+export default config[testedEnv];
