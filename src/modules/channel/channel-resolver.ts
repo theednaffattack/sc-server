@@ -116,12 +116,6 @@ export class ChannelResolver {
       threadId,
     };
 
-    console.log("VIEW MESSAGE SUB DATA", {
-      data,
-      messagePayload,
-      transformDatesForRedis,
-    });
-
     return transformDatesForRedis;
   }
 
