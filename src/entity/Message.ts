@@ -7,7 +7,7 @@ import {
   BaseEntity,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany
+  OneToMany,
 } from "typeorm";
 
 import { User } from "./User";
@@ -47,48 +47,26 @@ export class Message extends BaseEntity {
   // mappedMessages: [User];
 
   @Field(() => [Image], { nullable: "itemsAndList" })
-  @OneToMany(
-    () => Image,
-    image => image.message,
-    { nullable: true }
-  )
+  @OneToMany(() => Image, (image) => image.message, { nullable: true })
   images: Image[];
 
   @Field(() => [FileEntity], { nullable: "itemsAndList" })
-  @OneToMany(
-    () => FileEntity,
-    file => file.message,
-    { nullable: true }
-  )
+  @OneToMany(() => FileEntity, (file) => file.message, { nullable: true })
   files: FileEntity[];
 
   @Field(() => User)
-  @ManyToOne(
-    () => User,
-    user => user.sent_messages,
-    { cascade: true }
-  )
+  @ManyToOne(() => User, (user) => user.sent_messages, { cascade: true })
   sentBy: User;
 
   @Field(() => User)
-  @ManyToOne(
-    () => User,
-    user => user.messages,
-    { cascade: true }
-  )
+  @ManyToOne(() => User, (user) => user.messages, { cascade: true })
   user: User;
 
   @Field(() => Channel, { nullable: true })
-  @ManyToOne(
-    () => Channel,
-    channel => channel.messages
-  )
+  @ManyToOne(() => Channel, (channel) => channel.messages)
   channel: Channel;
 
   @Field(() => Thread, { nullable: true })
-  @ManyToOne(
-    () => Thread,
-    thread => thread.messages
-  )
+  @ManyToOne(() => Thread, (thread) => thread.messages)
   thread: Thread;
 }
