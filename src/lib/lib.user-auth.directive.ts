@@ -19,6 +19,8 @@ import {
 } from "./lib.permissions";
 import { TeamRoleEnum } from "../entity/Role";
 import { AuthorizationError } from "./util.errors";
+import { User } from "../entity/User";
+import { UserToTeam } from "../entity/UserToTeam";
 
 // export some from permissions
 export { satisfiesConditionalScopes, conditionalQueryMap };
@@ -69,12 +71,14 @@ const userMetaMapper = (user: any, metas: any) => {
   return null;
 };
 
-// @ts-ignore
 const getRolesAndScopes = (
-  user: any,
+  user: User,
+  userTeam: UserToTeam,
   defaultRole: string,
   allScopes: { [key: string]: any }
 ) => {
+  console.log("USER AUTH DIRECTIVE - ROLES", { user });
+
   // No user provided but scopes exists
   if (user == null) {
     if (allScopes) {
@@ -90,9 +94,14 @@ const getRolesAndScopes = (
     }
   } else {
     // case: user exists
-    const roles =
-      user.role || user.roles || user.Role || user.Roles || defaultRole;
-    const userScopes = user.scope || user.scopes || user.Scope || user.scopes;
+    // const roles =
+    //   user.role || user.roles || user.Role || user.Roles || defaultRole;
+    // const userScopes = user.scope || user.scopes || user.Scope || user.scopes;
+
+    const roles = userTeam.teamRoleAuthorizations || defaultRole;
+    const userScopes = user.team_scopes || user.team_scopes;
+
+    console.log("USER AUTH DIRECTIVE - ROLES", { roles, userScopes });
 
     if (userScopes) {
       // scopes are provided, take that as leading
@@ -115,7 +124,7 @@ const getRolesAndScopes = (
         });
       }
     } else {
-      // case: allScopes does exists
+      // case: allScopes does exist
       if (roles) {
         // a single scope is provided
         if (typeof roles === "string") {
@@ -150,6 +159,7 @@ const getRolesAndScopes = (
       message: "No roles and scopes exists for the user.",
     });
   }
+  return {};
 };
 
 export const verifyAndDecodeToken = ({ context }: any) => {
@@ -231,6 +241,7 @@ export class HasScopeDirective extends SchemaDirectiveVisitor {
 
       const rolesAndScopes = getRolesAndScopes(
         context.user,
+        context.userTeam,
         defaultRole,
         allScopes
       );
@@ -280,6 +291,7 @@ export class HasScopeDirective extends SchemaDirectiveVisitor {
 
         const rolesAndScopes = getRolesAndScopes(
           context.user,
+          context.userTeam,
           defaultRole,
           allScopes
         );
@@ -337,6 +349,8 @@ export class HasRoleDirective extends SchemaDirectiveVisitor {
 
     field.resolve = function (result, args, context, info) {
       let authenticationError = null;
+      console.log("FIELD RESOLVE RUNNING");
+
       try {
         context.user = verifyAndDecodeToken({ context });
       } catch (e) {
@@ -345,6 +359,7 @@ export class HasRoleDirective extends SchemaDirectiveVisitor {
 
       const rolesAndScopes = getRolesAndScopes(
         context.user,
+        context.userTeam,
         defaultRole,
         allScopes
       );
@@ -384,6 +399,7 @@ export class HasRoleDirective extends SchemaDirectiveVisitor {
 
         const rolesAndScopes = getRolesAndScopes(
           context.user,
+          context.userTeam,
           defaultRole,
           allScopes
         );
@@ -430,6 +446,7 @@ export class IsAuthenticatedDirective extends SchemaDirectiveVisitor {
 
         const rolesAndScopes = getRolesAndScopes(
           context.user,
+          context.userTeam,
           defaultRole,
           allScopes
         );
@@ -447,6 +464,7 @@ export class IsAuthenticatedDirective extends SchemaDirectiveVisitor {
 
       const rolesAndScopes = getRolesAndScopes(
         context.user,
+        context.userTeam,
         defaultRole,
         allScopes
       );
