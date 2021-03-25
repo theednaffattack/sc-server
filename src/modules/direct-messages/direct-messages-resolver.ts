@@ -336,7 +336,9 @@ export class DirectMessageResolver {
       .leftJoinAndSelect("thread.invitees", "inviteeReal")
       .leftJoinAndSelect("thread.team", "team")
       .leftJoinAndSelect("thread.messages", "message")
-      .where("invitee.id IN (:...userId)", { userId: [ctx.userId] })
+      .where("invitee.id IN (:...userId)", {
+        userId: [ctx.payload?.token?.userId],
+      })
       .andWhere("team.id = :teamId", { teamId })
       .andWhere("channel IS NULL")
       .getMany();
