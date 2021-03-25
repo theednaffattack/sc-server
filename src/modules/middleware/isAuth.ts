@@ -1,6 +1,4 @@
 import { MiddlewareFn } from "type-graphql";
-import { verify } from "jsonwebtoken";
-
 import { MyContext } from "../../types/MyContext";
 
 export const isAuth: MiddlewareFn<MyContext> = async ({ context }, next) => {
@@ -9,24 +7,22 @@ export const isAuth: MiddlewareFn<MyContext> = async ({ context }, next) => {
   //   throw new Error("Not authenticated");
   // }
 
-  // JWT implementation
-  const authorization = context.req.headers["authorization"];
+  if (context.payload?.errors && context.payload.errors.length > 0) {
+    const expiredErrors = context.payload.errors.filter(
+      ({ name }) => name === "TokenExpiredError"
+    );
 
-  if (!authorization) {
-    console.log("AUTHORIZATION HEADER MISSING", context.req.headers);
-
-    throw new Error("Not authenticated");
+    if (expiredErrors && expiredErrors.length > 0) {
+      throw new Error(`Your session has expired, please log in.`);
+    } else {
+      throw new Error(
+        `Not authenticated - ${context.payload.errors[0].message}`
+      );
+    }
   }
 
-  try {
-    const token = authorization.split(" ")[1];
-    const payload = verify(token, process.env.ACCESS_TOKEN_SECRET!);
-    context.payload = payload as any;
-    // console.log("VIEW PAYLOAD", payload);
-  } catch (err) {
-    console.log("IS AUTH ERROR", err);
+  if (!context.payload?.token?.userId) {
     throw new Error("Not authenticated");
   }
-
   return next();
 };
