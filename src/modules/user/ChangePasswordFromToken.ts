@@ -5,7 +5,7 @@ import { redis } from "../../redis";
 import { User } from "../../entity/User";
 import { forgotPasswordPrefix } from "../constants/redisPrefixes";
 import { ChangePasswordInput } from "./changePassword/ChangePasswordInput";
-import { MyContext } from "src/types/MyContext";
+import { MyContext } from "../../types/MyContext";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
 import { ChangePasswordResponse } from "../team/change-password-response";
@@ -19,9 +19,6 @@ export class ChangePasswordFromTokenResolver {
     { token, password }: ChangePasswordInput,
     @Ctx() ctx: MyContext
   ): Promise<ChangePasswordResponse> {
-    console.log("VIEW TOKEN", token);
-    // console.log("VIEW USERID", userId);
-
     const userId = await redis.get(forgotPasswordPrefix + token);
     // token expired in redis, possibly bad token
     if (!userId) {
