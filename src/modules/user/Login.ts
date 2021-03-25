@@ -15,6 +15,7 @@ import { LoginResponse } from "../team/login-response";
 import { sendRefreshToken } from "../../lib/lib.send-refresh-token";
 import { createAccessToken, createRefreshToken } from "../../lib/auth.jwt-auth";
 import { isAuth } from "../middleware/isAuth";
+import { UserToTeam } from "../../entity/UserToTeam";
 
 @Resolver()
 export class LoginResolver {
@@ -25,14 +26,25 @@ export class LoginResolver {
     @Arg("password") password: string,
     @Ctx() ctx: MyContext
   ): Promise<LoginResponse> {
-    const user = await User.findOne({ where: { username } });
-    // if we can't find a user return an obscure result (null) to prevent fishing
-    if (!user) {
-      return {
-        errors: [
-          { field: "username", message: "Error logging in. Please try again." },
-        ],
-      };
+    let userToTeam: UserToTeam | undefined;
+    let user: User | undefined;
+
+    try {
+      user = await User.findOne({ where: { username } });
+      // if we can't find a user return an obscure result (null) to prevent fishing
+      if (!user) {
+        return {
+          errors: [
+            {
+              field: "username",
+              message: "Error logging in. Please try again.",
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error("ERROR FINDING USER FOR LOGIN", error);
+      return { errors: [{ field: "username", message: "Login error" }] };
     }
 
     const valid = await bcrypt.compare(password, user.password);
@@ -63,6 +75,14 @@ export class LoginResolver {
 
     ctx.userId = user.id;
 
+    try {
+      userToTeam = await UserToTeam.findOne({ where: { id: user.id } });
+      ctx.userTeam = userToTeam;
+    } catch (error) {
+      console.error("ERROR SELECTING USER / TEAM MERGE RECORD", error);
+      return { errors: [{ field: "username", message: "Login error" }] };
+    }
+
     return {
       accessToken: createAccessToken(user),
       user,
@@ -79,7 +99,6 @@ export class LoginResolver {
   @Query(() => String)
   @UseMiddleware(isAuth)
   bye(@Ctx() { payload }: MyContext) {
-    console.log(payload);
-    return `your user id is: ${payload!.userId}`;
+    return `your user id is: ${payload!.token?.userId}`;
   }
 }
