@@ -154,6 +154,12 @@ export class User extends BaseEntity {
   @OneToMany(() => UserToTeam, (userToTeam) => userToTeam.team)
   userToTeams: UserToTeam[];
 
+  @Field(() => [String], { nullable: false })
+  @Column("text", {
+    array: true,
+  })
+  team_scopes: string[];
+
   @Column("int", { default: 0 })
   tokenVersion: number;
 }
