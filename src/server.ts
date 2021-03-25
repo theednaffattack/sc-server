@@ -52,23 +52,63 @@ const getContextFromHttpRequest = (
 
   //   return { userId, req, res, teamId };
   // }
-  return { req, res, token: req.headers.authorization || "" };
+
+  // JWT implementation
+  const authorization = req.headers["authorization"];
+  if (authorization) {
+    try {
+      const token = authorization.split(" ")[1];
+      const payload = verify(token, process.env.ACCESS_TOKEN_SECRET!);
+      return {
+        req,
+        res,
+        payload: { token: payload },
+        token: req.headers.authorization || "",
+      };
+    } catch (err) {
+      console.log("IS AUTH ERROR", err);
+      // throw new Error("Not authenticated");
+      return {
+        req,
+        res,
+        payload: {
+          token: undefined,
+          errors: [err],
+        },
+        token: req.headers.authorization || "",
+      };
+    }
+  } else {
+    return { req, res };
+  }
 };
 
 const getContextFromSubscription = (connection: any) => {
   // old cookie implementation
   // const { userId } = connection.context.req.session;
+  console.log(
+    "VIEW CONNECTION CONTEXT DETAILS",
+    Object.keys(connection.context)
+  );
 
-  const token = connection.context.authorization || "";
-  console.log("VIEW CONNECTION CONTEXT", { ctx: connection.context, token });
-  // const payload = verify(token, process.env.JWT_SECRET!);
-  return {
-    // userId: payload.userId,
-    token,
-    req: connection.context.req,
-    res: connection.context.res,
-    teamId: connection.context.teamId,
-  };
+  const authorization = connection.context.authorization;
+  if (authorization) {
+    try {
+      const token = authorization.split(" ")[1];
+      const payload = verify(token, process.env.ACCESS_TOKEN_SECRET!);
+      return {
+        payload: { token: payload },
+        req: connection.context.req,
+        res: connection.context.res,
+        teamId: connection.context.teamId,
+        token: authorization,
+      };
+    } catch (error) {
+      throw Error("Error authenticating subscription.");
+    }
+  } else {
+    return { req: connection.context.req, res: connection.context.res };
+  }
 };
 
 const main = async () => {
@@ -114,16 +154,10 @@ const main = async () => {
     }
   }
 
-  let schema;
-  try {
-    schema = await createSchemaSync();
-  } catch (error) {
-    console.warn("CREATE SCHEMA ERROR", error);
-  }
   const apolloServer = new ApolloServer({
     introspection: true,
     playground: { version: "1.7.25", endpoint: "/graphql" },
-    schema,
+    schema: createSchemaSync,
     context: ({ req, res, connection }: any) => {
       if (connection) {
         return getContextFromSubscription(connection);
