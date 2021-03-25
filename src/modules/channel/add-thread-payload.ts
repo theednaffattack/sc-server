@@ -18,7 +18,7 @@ export class AddThreadPayload {
   threadId: string;
 
   @Field(() => Message)
-  message: Message;
+  message: Partial<Message>;
 
   @Field(() => User)
   sentBy: User;
