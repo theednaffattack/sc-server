@@ -13,7 +13,6 @@ import {
 } from "typeorm";
 import { Field, ID, ObjectType, Int } from "type-graphql";
 
-// import { User } from "./User";
 import { Message } from "./Message";
 import { Team } from "./Team";
 import { User } from "./User";
