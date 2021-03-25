@@ -37,6 +37,7 @@ export class RegisterResolver {
         email,
         username,
         password: hashedPassword,
+        team_scopes: [],
       }).save();
     } catch (error) {
       console.warn("ERROR CREATING USER", error);
