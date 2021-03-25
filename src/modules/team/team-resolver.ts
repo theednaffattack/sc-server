@@ -1,30 +1,31 @@
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Arg,
-  ID,
-  UseMiddleware,
-  Ctx,
-  Authorized,
-  ArgsType,
-  Field,
-  Int,
-  Args,
-  ObjectType,
-} from "type-graphql";
 import bcrypt from "bcryptjs";
+import {
+  Arg,
+  Args,
+  ArgsType,
+  Authorized,
+  Ctx,
+  Field,
+  ID,
+  Int,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 import { inspect } from "util";
-
-import { User } from "../../entity/User";
+import { TeamRoleEnum } from "../../entity/Role";
 import { Team } from "../../entity/Team";
-import { exampleTeamLoader } from "../utils/data-loaders/batch-example-loader";
-import { teamMemberLoader } from "../utils/data-loaders/batch-team-members-loader";
+import { User } from "../../entity/User";
+import { UserToTeam } from "../../entity/UserToTeam";
+import { MyContext } from "../../types/MyContext";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
-import { MyContext } from "../../types/MyContext";
-import { TeamRoleEnum } from "../../entity/Role";
-import { UserToTeam } from "../../entity/UserToTeam";
+import { exampleTeamLoader } from "../utils/data-loaders/batch-example-loader";
+import { teamMemberLoader } from "../utils/data-loaders/batch-team-members-loader";
+import { AddTeamMemberByEmailInput } from "./add-team-member-by-email-input";
+import { AddTeamMemberByIdInput } from "./add-team-member-by-id-input";
 import { TeamResponse } from "./team-response";
 
 // ADDITIONAL RESOLVERS NEEDED:
@@ -76,13 +77,14 @@ type GetUserIsEmptyType =
 @Resolver()
 export class UserTeamResolver {
   @UseMiddleware(isAuth, loggerMiddleware)
-  @Authorized("ADMIN", "OWNER")
+  // @Authorized("ADMIN", "OWNER")
   @Mutation(() => UserToTeamIdReferencesOnlyClass)
   async addTeamMemberByEmail(
-    @Arg("email", () => String) email: string,
-    @Arg("teamId", () => String) teamId: string,
-    @Arg("roles", () => [TeamRoleEnum]) roles: TeamRoleEnum[]
-  ): Promise<UserToTeamIdReferencesOnly> {
+    @Arg("data") { teamRoles: roles, email, teamId }: AddTeamMemberByEmailInput
+  ): // @Arg("email", () => String) email: string,
+  // @Arg("teamId", () => String) teamId: string,
+  // @Arg("roles", () => [TeamRoleEnum]) roles: TeamRoleEnum[]
+  Promise<UserToTeamIdReferencesOnly> {
     console.log("CHECK USER FETCH 1", { email, teamId, roles });
 
     // evaluate fetch result
@@ -160,9 +162,7 @@ export class UserTeamResolver {
   @Authorized("ADMIN", "OWNER")
   @Mutation(() => UserToTeamIdReferencesOnlyClass)
   async addTeamMemberById(
-    @Arg("userId", () => String) userId: string,
-    @Arg("teamId", () => String) teamId: string,
-    @Arg("roles", () => [TeamRoleEnum]) roles: TeamRoleEnum[]
+    @Arg("data") { teamRoles: roles, userId, teamId }: AddTeamMemberByIdInput
   ): Promise<UserToTeamIdReferencesOnly> {
     console.log("CHECK USER FETCH 1", { userId, teamId, roles });
 
@@ -244,7 +244,7 @@ export class UserTeamResolver {
     @Arg("name", () => String) name: string,
     @Ctx() { payload }: MyContext
   ): Promise<TeamResponse> {
-    const userId = payload?.userId;
+    const userId = payload?.token?.userId;
     if (!userId) {
       throw new Error("User ID is undefined");
     }
@@ -390,7 +390,7 @@ export class UserTeamResolver {
   async getAllTeamsForUser(
     @Ctx() { payload }: MyContext
   ): Promise<UserToTeam[]> {
-    const userId = payload?.userId;
+    const userId = payload?.token?.userId;
     if (!userId) {
       throw new Error("User ID is undefined.");
     }
