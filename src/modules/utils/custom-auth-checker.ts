@@ -26,7 +26,9 @@ export const customAuthChecker: AuthChecker<MyContext> = async (
 
   const getJoinedRelations = await UserToTeam.createQueryBuilder("userToTeam")
     .select()
-    .where("userToTeam.userId = :userId", { userId: context.userId })
+    .where("userToTeam.userId = :userId", {
+      userId: context.payload?.token?.userId,
+    })
     .getMany()
     .catch((error) => {
       throw Error(
@@ -34,13 +36,19 @@ export const customAuthChecker: AuthChecker<MyContext> = async (
       );
     });
 
+  console.log("VIEW JOINED RELATIONS", {
+    getJoinedRelations,
+    ctxUserId: context.payload?.token?.userId,
+    keys: Object.keys(context),
+  });
+
   if (shouldAuthorizationBePerformed === AuthorizationStatus.PERFORM_AUTH) {
     return (
       parseArgs(args, info).teamId ===
         getJoinedRelations.filter(
           ({ teamId }) => teamId === parseArgs(args, info).teamId
         )[0].teamId &&
-      context.userId ===
+      context.payload?.token?.userId ===
         getJoinedRelations.filter(
           ({ teamId }) => teamId === parseArgs(args, info).teamId
         )[0].userId &&
@@ -59,12 +67,15 @@ function findDuplicates(data: any) {
   let sortedData = data
     .slice()
     .sort((a: any, b: any) => (a.teamId > b.teamId ? 1 : -1));
+
   let duplicateResults = [];
+
   for (let i = 0; i < sortedData.length - 1; i++) {
     if (sortedData[i + 1].teamId === sortedData[i].teamId) {
       duplicateResults.push(sortedData[i]);
     }
   }
+
   return duplicateResults;
 }
 
