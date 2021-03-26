@@ -86,10 +86,6 @@ const getContextFromHttpRequest = (
 const getContextFromSubscription = (connection: any) => {
   // old cookie implementation
   // const { userId } = connection.context.req.session;
-  console.log(
-    "VIEW CONNECTION CONTEXT DETAILS",
-    Object.keys(connection.context)
-  );
 
   const authorization = connection.context.authorization;
   if (authorization) {
