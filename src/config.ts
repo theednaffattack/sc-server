@@ -47,6 +47,6 @@ function testEnvVar(env: keyof typeof config | undefined): keyof typeof config {
   }
 }
 
-const testedEnv = testEnvVar(env);
+const testedEnv = testEnvVar(env as keyof typeof config);
 
 export default config[testedEnv];
