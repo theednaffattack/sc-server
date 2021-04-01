@@ -10,7 +10,7 @@
     "start": "node -r dotenv/config dist/server.js",
     "weird-start": "ts-node -r dotenv/config src/server.ts",
     "build": "tsc",
-    "cf": "ts-node --files -r dotenv/config src/modules/utils/cf-sign.ts",
+    "cf": "ts-node -T --files -r dotenv/config src/modules/utils/cf-sign.ts",
     "prep-db": "ts-node -r dotenv/config src/lib/util.create-database.ts",
     "drop-db": "ts-node -r dotenv/config src/lib/util.drop-dev-database.ts",
     "local-start": "tsc && node -r dotenv/config src/server.ts",
