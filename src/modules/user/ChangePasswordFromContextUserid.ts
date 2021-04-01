@@ -7,6 +7,7 @@ import { MyContext } from "../../types/MyContext";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
 import { PasswordInput } from "../shared/PasswordInput";
+import { createAccessToken } from "../../../src/lib/auth.jwt-auth";
 
 @Resolver()
 export class ChangePasswordFromContextUseridResolver {
@@ -15,7 +16,7 @@ export class ChangePasswordFromContextUseridResolver {
   async changePasswordFromContextUserid(
     @Arg("data")
     { password }: PasswordInput,
-    @Ctx() { req, userId }: MyContext
+    @Ctx() { req, userId, ...restCtx }: MyContext
   ): Promise<User | null> {
     if (!userId) {
       return null;
@@ -34,8 +35,12 @@ export class ChangePasswordFromContextUseridResolver {
     // save updated password
     await user.save();
 
+    const what = createAccessToken(user);
+    console.log("WHAT THE HELL", what);
+
     // login in the user
-    req.session!.userId = user.id;
+    restCtx.payload = { token: { userId: user.id, iat: 0, exp: 0 } };
+    // req.session!.userId = user.id;
 
     return user;
   }

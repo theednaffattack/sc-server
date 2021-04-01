@@ -27,13 +27,13 @@ clientManager.importCertificate(
     Certificate: fs.readFileSync(
       path.resolve(__dirname, `../../secret/cert.pem`)
     ),
-    PrivateKey: fs.readFileSync(
-      path.resolve(__dirname, `../../secret/key.pem`)
-    ),
-    // CertificateArn:
-    //   "arn:aws:acm:us-east-1:942394920512:certificate/29d4eafd-1014-4d2a-a506-8466588fbde4",
+    CertificateArn:
+      "arn:aws:acm:us-east-1:942394920512:certificate/2ae5765e-cbfd-4421-9c7a-f021923f6202",
     CertificateChain: fs.readFileSync(
       path.resolve(__dirname, `../../secret/fullchain.pem`)
+    ),
+    PrivateKey: fs.readFileSync(
+      path.resolve(__dirname, `../../secret/key.pem`)
     ),
     Tags: [{ Key: "site_private_images", Value: "sc.eddienaff.dev" }],
   },

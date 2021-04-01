@@ -4,7 +4,7 @@ import {
   Query,
   Arg,
   UseMiddleware,
-  Authorized
+  Authorized,
 } from "type-graphql";
 
 import { User } from "../../entity/User";
@@ -37,7 +37,7 @@ export class GetListToCreateThread {
     @Ctx() ctx: MyContext,
     @Arg("teamId", () => String) teamId: string
   ): Promise<User[]> {
-    let me = ctx.req && ctx.req.session ? ctx.req.session.userId : null;
+    let me = ctx.req && ctx.payload ? ctx.payload.token?.userId : null;
     if (me) {
       // const thoseICanMessage: any[] = [];
 

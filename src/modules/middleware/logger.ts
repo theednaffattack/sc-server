@@ -4,7 +4,7 @@ import { MyContext } from "../../types/MyContext";
 import pino from "pino";
 
 const logger = pino({
-  prettyPrint: { colorize: true }
+  prettyPrint: { forceColor: true },
 });
 
 export const loggerMiddleware: MiddlewareFn<MyContext> = async (
@@ -18,6 +18,6 @@ export const loggerMiddleware: MiddlewareFn<MyContext> = async (
   logger.info({
     type: "timing",
     name: `${info.parentType.name}.${info.fieldName}`,
-    ms: `${resolveTime} ms`
+    ms: `${resolveTime} ms`,
   });
 };

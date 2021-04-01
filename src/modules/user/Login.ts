@@ -16,6 +16,8 @@ import { sendRefreshToken } from "../../lib/lib.send-refresh-token";
 import { createAccessToken, createRefreshToken } from "../../lib/auth.jwt-auth";
 import { isAuth } from "../middleware/isAuth";
 import { UserToTeam } from "../../entity/UserToTeam";
+import AWS from "aws-sdk";
+import internalIp from "internal-ip";
 
 @Resolver()
 export class LoginResolver {
@@ -65,11 +67,6 @@ export class LoginResolver {
       };
     }
 
-    console.log("CTX & USER ID", {
-      ctxResExists: ctx.res ? true : false,
-      userId: user.id,
-    });
-
     // login successful
     sendRefreshToken(ctx.res, createRefreshToken(user));
 
@@ -83,6 +80,83 @@ export class LoginResolver {
       return { errors: [{ field: "username", message: "Login error" }] };
     }
 
+    const cfPublicKeyId = process.env.CF_PUBLIC_KEY_ID;
+    const cfPrivateKey = process.env.CF_PRIVATE_KEY;
+
+    const cfDomain = process.env.CLOUDFRONT_DOMAIN;
+
+    const frontendDomain =
+      process.env.NODE_ENV === "development"
+        ? internalIp.v4.sync()
+        : process.env.COOKIE_DOMAIN;
+
+    if (cfPublicKeyId && cfPrivateKey && cfDomain && frontendDomain) {
+      // Create signed cookie for private content
+      const CFSigner = new AWS.CloudFront.Signer(cfPublicKeyId, cfPrivateKey);
+
+      // 2 days as milliseconds to use for link expiration
+      const twoDays = 2 * 24 * 60 * 60 * 1000;
+
+      const expireTime = Math.floor((Date.now() + twoDays) / 1000);
+
+      const policy = JSON.stringify({
+        Statement: [
+          {
+            Resource: `https://${cfDomain}/images/*`,
+            Condition: {
+              DateLessThan: {
+                "AWS:EpochTime": expireTime,
+              },
+            },
+          },
+        ],
+      });
+
+      // Set Cookies after successful verification
+      const cookie = CFSigner.getSignedCookie({
+        policy,
+      });
+
+      ctx.res.cookie(
+        "CloudFront-Key-Pair-Id",
+        cookie["CloudFront-Key-Pair-Id"],
+        {
+          domain: frontendDomain,
+          httpOnly: true,
+          maxAge: 1000 * 60 * 60 * 24 * 7,
+          path: "/",
+          secure: process.env.NODE_ENV === "production" ? true : false,
+        }
+      );
+
+      ctx.res.cookie("CloudFront-Policy", cookie["CloudFront-Policy"], {
+        httpOnly: true,
+        domain: frontendDomain,
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        path: "/",
+        secure: process.env.NODE_ENV === "production" ? true : false,
+      });
+
+      ctx.res.cookie("CloudFront-Signature", cookie["CloudFront-Signature"], {
+        httpOnly: true,
+        domain: frontendDomain,
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        path: "/",
+        secure: process.env.NODE_ENV === "production" ? true : false,
+      });
+    } else {
+      console.error(
+        `Cannot access remote resource necessary for login. Please check your environment variables`
+      );
+      return {
+        errors: [
+          {
+            field: "username",
+            message: "Login error",
+          },
+        ],
+      };
+    }
     return {
       accessToken: createAccessToken(user),
       user,

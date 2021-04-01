@@ -9,6 +9,7 @@ import { MyContext } from "../../types/MyContext";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
 import { ChangePasswordResponse } from "../team/change-password-response";
+import { createAccessToken } from "../../../src/lib/auth.jwt-auth";
 
 @Resolver()
 export class ChangePasswordFromTokenResolver {
@@ -57,8 +58,11 @@ export class ChangePasswordFromTokenResolver {
     // save updated password
     await user.save();
 
+    const what = createAccessToken(user);
+    console.log("WHAT IS THIS - CHANGE PASSWORD FROM TOKEN", what);
+
     // login in the user
-    ctx.req.session!.userId = user.id;
+    ctx.payload = { token: { userId: user.id, iat: 0, exp: 0 } };
 
     return {
       user,

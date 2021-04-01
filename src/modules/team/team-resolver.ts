@@ -453,8 +453,8 @@ export class UserTeamResolver {
     console.log("TEAM USER", { teamUser, validTeamUser });
 
     // all is well return the user we found
-    req.session!.userId = (teamUser && teamUser.id) || "";
-    req.session!.teamId = teamId;
+    // req.session!.userId = (teamUser && teamUser.id) || "";
+    // req.session!.teamId = teamId;
     return teamUser;
   }
 

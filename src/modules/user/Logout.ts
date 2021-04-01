@@ -14,16 +14,11 @@ export class LogoutResolver {
     return new Promise((resolve) => {
       // sendRefreshToken(ctx.res, "");
 
-      console.log("VIEW REQ HEADERS", {
-        cookies: ctx.req.cookies,
-        headers: ctx.req.headers,
-      });
-
       ctx.res.clearCookie(process.env.COOKIE_NAME!);
+      ctx.res.clearCookie("CloudFront-Key-Pair-Id");
+      ctx.res.clearCookie("CloudFront-Policy");
+      ctx.res.clearCookie("CloudFront-Signature");
 
-      console.log("VIEW RES COOKIE", {
-        cookie: ctx.res.cookie,
-      });
       return resolve(true);
 
       // return ctx.req.session!.destroy((err) => {
