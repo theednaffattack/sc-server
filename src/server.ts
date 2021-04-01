@@ -9,7 +9,7 @@ import { GraphQLFormattedError, GraphQLError } from "graphql";
 import internalIp from "internal-ip";
 import colors from "colors/safe";
 import http from "http";
-import cors, { CorsOptions as CorsOptionsProps } from "cors";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 
 // import { redis } from "./redis";
@@ -23,6 +23,7 @@ import { verify } from "jsonwebtoken";
 import { User } from "./entity/User";
 import { sendRefreshToken } from "./lib/lib.send-refresh-token";
 import { createRefreshToken, createAccessToken } from "./lib/auth.jwt-auth";
+import { createAuthorizationError } from "./lib/util.errors";
 // import { createUsersLoader } from "./modules/utils/data-loaders/batch-user-loader";
 
 // interface CorsOptionsProps {
@@ -67,16 +68,23 @@ const getContextFromHttpRequest = (
       };
     } catch (err) {
       console.log("IS AUTH ERROR", err);
+      if (err.name === "TokenExpiredError") {
+        throw createAuthorizationError({
+          message: "Your session has expired, please log in.",
+        });
+      }
+      throw createAuthorizationError({ message: "Not Authorized." });
+
       // throw new Error("Not authenticated");
-      return {
-        req,
-        res,
-        payload: {
-          token: undefined,
-          errors: [err],
-        },
-        token: req.headers.authorization || "",
-      };
+      // return {
+      //   req,
+      //   res,
+      //   payload: {
+      //     token: undefined,
+      //     errors: [err],
+      //   },
+      //   token: req.headers.authorization || "",
+      // };
     }
   } else {
     return { req, res };
@@ -245,7 +253,7 @@ const main = async () => {
     ? [`${process.env.PRODUCTION_CLIENT_URI}`]
     : [`http://${homeIp}:4040`, `http://${homeIp}:${process.env.VIRTUAL_PORT}`];
 
-  const corsOptions: CorsOptionsProps = {
+  const corsOptions = {
     credentials: true,
     methods: "GET,HEAD,POST,OPTIONS",
     optionsSuccessStatus: 200,
@@ -302,8 +310,17 @@ const main = async () => {
   // }
 
   // we're bypassing cors used by apollo-server-express here
-  app.use(cors(corsOptions));
-  app.options("*", cors(corsOptions));
+  app.use((_req, _res, next) => {
+    next();
+  }, cors(corsOptions));
+
+  app.options(
+    "*",
+    (_req, _res, next) => {
+      next();
+    },
+    cors(corsOptions)
+  );
 
   app.use(cookieParser());
   // app.use(sessionMiddleware);
