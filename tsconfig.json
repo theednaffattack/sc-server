@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2019",
     "module": "commonjs",
-    "lib": ["dom", "es6", "es2017", "esnext.asynciterable"],
+    "lib": ["es2020"],
     "sourceMap": true,
     "outDir": "./dist",
     "moduleResolution": "node",
     "declaration": false,
-
+    "allowJs": true,
     "composite": false,
     "removeComments": true,
     "noImplicitAny": true,
@@ -23,6 +23,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types", "./typings"],
     "baseUrl": ".",
     "rootDir": "src"
   },
@@ -30,6 +31,7 @@
   "include": [
     "./src/**/*.tsx",
     "./src/**/*.ts",
-    "./src/modules/channel/channel-helpers"
+    "./src/modules/channel/channel-helpers/",
+    "./typings/"
   ]
 }
