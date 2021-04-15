@@ -32,15 +32,17 @@ ENV NODE_ENV=production
 
 ## We just need the build to execute the command
 COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/db/migrations ./db/migrations
 COPY --from=builder /usr/src/app/certs ./certs
 
 
 # Inform Docker that the container is listening on the specified port at runtime.
-# EXPOSE 6000
+EXPOSE 5050
 
 USER node
 
-# start the app 
-CMD ["node", "/app/dist/index.js"]
+# start the app
+# CMD ["node", "/dist/index.js"]
+CMD ["yarn", "start"]
