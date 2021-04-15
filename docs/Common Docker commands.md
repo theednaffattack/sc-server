@@ -34,6 +34,13 @@ Combined build and push
 docker build  --shm-size 1G -t theednaffattack/sc-server:production . && docker push theednaffattack/sc-server:production
 ```
 
+Dokku tag and deployment
+docker tag theednaffattack/sc-server:production dokku/sc-server:latest
+
+dokku tags sc-server
+
+dokku tags:deploy sc-server latest
+
 ```bash
 docker build -t theednaffattack/sc-db:init . && docker push theednaffattack/sc-db:init
 ```
