@@ -26,7 +26,7 @@ export class GetListToCreateThread {
     @Ctx() ctx: MyContext
     // @Arg("teamId") teamId: string
   ): Promise<any> {
-    let me = ctx.req && ctx.req.session ? ctx.req.session.userId : null;
+    let me = ctx.userId; // ctx.req && ctx.req.session ? ctx.req.session.userId : null;
     if (me) {
       const thoseICanMessage: any[] = [];
 
