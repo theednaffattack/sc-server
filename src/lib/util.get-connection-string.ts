@@ -8,7 +8,7 @@ export function getConnectionString(env: string | undefined): string {
     return process.env.PG_TEST_CONNECTION_STRING as string;
   }
   if (env === "production") {
-    return process.env.PG_PROD_CONNECTION_STRING as string;
+    return process.env.DATABASE_URL as string;
   } else {
     return process.env.PG_DEV_CONNECTION_STRING as string;
   }
