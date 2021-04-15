@@ -1,16 +1,17 @@
 import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions";
 
+// Dokku DATABASE_URL env variable can be destructured as...
+// [database type]://[username]:[password]@[host]:[port]/[database name]
+// TypeOrm seems to require the "type" connection option property
+// even if using a connection string via the "url" parameter.
+
 export const productionOrmConfig: PostgresConnectionOptions = {
   name: "default",
+  url: process.env.DATABASE_URL,
   type: "postgres",
-  host: process.env.PG_DB_HOST,
-  port: parseInt(process.env.POSTGRES_PORT!, 10),
-  ssl: true,
-  username: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASS,
-  database: process.env.POSTGRES_DBNAME,
-  logging: process.env.NODE_ENV !== "production",
-  synchronize: process.env.NODE_ENV !== "production",
+  ssl: false,
+  logging: false,
+  synchronize: false,
   entities: ["dist/entity/*.*"],
   migrations: ["src/migration/**/*.ts"],
   subscribers: ["src/subscriber/**/*.ts"],
