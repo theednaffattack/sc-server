@@ -7,7 +7,7 @@ import { MyContext } from "../../types/MyContext";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
 import { PasswordInput } from "../shared/PasswordInput";
-import { createAccessToken } from "../../../src/lib/auth.jwt-auth";
+import { createAccessToken } from "../../lib/auth.jwt-auth";
 
 @Resolver()
 export class ChangePasswordFromContextUseridResolver {
