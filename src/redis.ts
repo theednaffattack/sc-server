@@ -34,7 +34,7 @@ export function redisReady(readyEvent: any) {
 
 export const redis = nodeEnvIs_NOT_Prod
   ? new Redis(developmentOptions)
-  : new Redis(productionOptions);
+  : new Redis(6379, process.env.REDIS_URL); // new Redis(productionOptions);
 
 redis.on("error", redisError);
 
@@ -42,11 +42,11 @@ redis.on("ready", redisReady);
 
 const pubRedis = nodeEnvIs_NOT_Prod
   ? new Redis(developmentOptions)
-  : new Redis(productionOptions);
+  : new Redis(6379, process.env.REDIS_URL);
 
 const subRedis = nodeEnvIs_NOT_Prod
   ? new Redis(developmentOptions)
-  : new Redis(productionOptions);
+  : new Redis(6379, process.env.REDIS_URL);
 
 export const pubsub = new RedisPubSub({
   // ...,
