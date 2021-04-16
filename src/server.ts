@@ -31,7 +31,7 @@ import { createAuthorizationError } from "./lib/util.errors";
 //   origin: (origin: any, callback: any) => void;
 // }
 
-const port = process.env.VIRTUAL_PORT;
+const port = 4040;
 
 // const RedisStore = connectRedis(session);
 
