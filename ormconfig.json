@@ -1,0 +1,14 @@
+[
+  {
+    "name": "production",
+    "url": "postgres://postgres:d0278c99032b904264c1061d57ebd54a@sc.eddienaff.dev:25432/sc_db",
+    "type": "postgres",
+    "ssl": false,
+    "logging": false,
+    "synchronize": false,
+    "cli": { "migrationsDir": "src/migration" },
+    "entities": ["dist/entity/*.*"],
+    "migrations": ["src/migration/*.ts"],
+    "subscribers": ["src/subscriber/**/*.ts"]
+  }
+]
