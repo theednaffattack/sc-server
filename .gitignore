@@ -16,3 +16,4 @@ yarn-error.log
 .env.ednaff
 .env.old
 .env.local
+docs/Dokku.md
