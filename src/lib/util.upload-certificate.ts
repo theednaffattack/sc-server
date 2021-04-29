@@ -28,14 +28,14 @@ clientManager.importCertificate(
       path.resolve(__dirname, `../../secret/cert.pem`)
     ),
     PrivateKey: fs.readFileSync(
-      path.resolve(__dirname, `../../secret/key.pem`)
+      path.resolve(__dirname, `../../secret/privkey.pem`)
     ),
     // CertificateArn:
     //   "arn:aws:acm:us-east-1:942394920512:certificate/29d4eafd-1014-4d2a-a506-8466588fbde4",
     CertificateChain: fs.readFileSync(
       path.resolve(__dirname, `../../secret/fullchain.pem`)
     ),
-    Tags: [{ Key: "site_private_images", Value: "sc.eddienaff.dev" }],
+    Tags: [{ Key: "site_private_files", Value: "sc.eddienaff.dev" }],
   },
   importCertCallback
 );
@@ -47,7 +47,8 @@ function importCertCallback(
   if (error) {
     console.warn("VIEW ACM IMPORT CERT ERROR", error);
   }
-  if (data.CertificateArn) {
+  if (data && data.CertificateArn) {
     console.log("CERTIFICATE SUCCESSFULLY RE-UPLOADED", data);
   }
+  console.log("NO ARN?", data);
 }
