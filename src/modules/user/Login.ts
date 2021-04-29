@@ -117,33 +117,35 @@ export class LoginResolver {
         policy,
       });
 
-      ctx.res.cookie(
-        "CloudFront-Key-Pair-Id",
-        cookie["CloudFront-Key-Pair-Id"],
-        {
-          domain: frontendDomain,
+      if (cookie) {
+        ctx.res.cookie(
+          "CloudFront-Key-Pair-Id",
+          cookie["CloudFront-Key-Pair-Id"],
+          {
+            domain: frontendDomain,
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+            path: "/",
+            secure: process.env.NODE_ENV === "production" ? true : false,
+          }
+        );
+
+        ctx.res.cookie("CloudFront-Policy", cookie["CloudFront-Policy"], {
           httpOnly: true,
+          domain: frontendDomain,
           maxAge: 1000 * 60 * 60 * 24 * 7,
           path: "/",
           secure: process.env.NODE_ENV === "production" ? true : false,
-        }
-      );
+        });
 
-      ctx.res.cookie("CloudFront-Policy", cookie["CloudFront-Policy"], {
-        httpOnly: true,
-        domain: frontendDomain,
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-        path: "/",
-        secure: process.env.NODE_ENV === "production" ? true : false,
-      });
-
-      ctx.res.cookie("CloudFront-Signature", cookie["CloudFront-Signature"], {
-        httpOnly: true,
-        domain: frontendDomain,
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-        path: "/",
-        secure: process.env.NODE_ENV === "production" ? true : false,
-      });
+        ctx.res.cookie("CloudFront-Signature", cookie["CloudFront-Signature"], {
+          httpOnly: true,
+          domain: frontendDomain,
+          maxAge: 1000 * 60 * 60 * 24 * 7,
+          path: "/",
+          secure: process.env.NODE_ENV === "production" ? true : false,
+        });
+      }
     } else {
       console.error(
         `Cannot access remote resource necessary for login. Please check your environment variables`
