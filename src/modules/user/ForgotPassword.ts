@@ -4,8 +4,9 @@ import internalIp from "internal-ip";
 
 import { redis } from "../../redis";
 import { User } from "../../entity/User";
-import { sendEmail } from "../utils/sendEmail";
+import { sendEtherealEmail } from "../utils/sendEtherealEmail";
 import { forgotPasswordPrefix } from "../constants/redisPrefixes";
+import { sendPostmarkEmail } from "../../lib/util.send-postmark-email";
 
 @Resolver()
 export class ForgotPasswordResolver {
@@ -35,20 +36,16 @@ export class ForgotPasswordResolver {
     }
 
     if (nodeEnvIsProd) {
+      const uri = `https://${process.env.PRODUCTION_CLIENT_ORIGIN}:${process.env.INTERNAL_API_PORT}/change-password/${token}`;
       try {
-        await sendEmail(
-          email,
-          `https://${process.env.FRONT_END_PROTO_AND_DOMAIN_PROD}:${process.env.INTERNAL_API_PORT}/change-password/${token}`
-        );
+        await sendPostmarkEmail(email, uri);
       } catch (error) {
         console.error("Forgot password - send email error", error);
       }
     } else {
+      const uri = `http://${homeIp}:${process.env.INTERNAL_API_PORT}/change-password/${token}`;
       try {
-        await sendEmail(
-          email,
-          `http://${homeIp}:${process.env.INTERNAL_API_PORT}/change-password/${token}`
-        );
+        await sendEtherealEmail(email, uri);
       } catch (error) {
         console.error("Forgot password - send email error", error);
       }

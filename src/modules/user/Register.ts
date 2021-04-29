@@ -4,9 +4,10 @@ import { User } from "../../entity/User";
 import { RegisterInput } from "./register/RegisterInput";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
-import { sendEmail } from "../utils/sendEmail";
+import { sendEtherealEmail } from "../utils/sendEtherealEmail";
 import { createConfirmationUrl } from "../utils/createConfirmationUrl";
 import { RegisterResponse } from "../team/register-response";
+import { sendPostmarkEmail } from "../../lib/util.send-postmark-email";
 
 @Resolver()
 export class RegisterResolver {
@@ -37,7 +38,7 @@ export class RegisterResolver {
         email,
         username,
         password: hashedPassword,
-        team_scopes: [],
+        team_scopes: ["no-team:guest"],
       }).save();
     } catch (error) {
       console.warn("ERROR CREATING USER", error);
@@ -54,7 +55,16 @@ export class RegisterResolver {
 
     try {
       if (user) {
-        await sendEmail(email, await createConfirmationUrl(user.id));
+        const confEmail = await createConfirmationUrl(user.id);
+        if (process.env.NODE_ENV === "development") {
+          await sendEtherealEmail(email, confEmail);
+        }
+        if (process.env.NODE_ENV === "production") {
+          await sendPostmarkEmail(email, confEmail);
+        }
+        if (process.env.NODE_ENV === "test") {
+          await sendEtherealEmail(email, confEmail);
+        }
       } else {
         return {
           errors: [
