@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-acm": "^3.3.0",
+    "@aws-sdk/client-cloudfront": "^3.13.1",
     "apollo-server-express": "2.21.0",
     "aws-sdk": "^2.812.0",
     "axios": "^0.21.1",
@@ -60,6 +61,7 @@
     "pgtools": "^0.3.0",
     "pino": "^5.14.0",
     "pino-pretty": "^4.3.0",
+    "postmark": "^2.7.4",
     "reflect-metadata": "^0.1.13",
     "type-graphql": "1.1.1",
     "typeorm": "0.2.21",
