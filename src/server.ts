@@ -31,7 +31,9 @@ import { createAuthorizationError } from "./lib/util.errors";
 //   origin: (origin: any, callback: any) => void;
 // }
 
-const port = 4040;
+const port = process.env.INTERNAL_API_PORT
+  ? parseInt(process.env.INTERNAL_API_PORT, 10)
+  : 5050;
 
 // const RedisStore = connectRedis(session);
 
@@ -116,8 +118,9 @@ const getContextFromSubscription = (connection: any) => {
 };
 
 const main = async () => {
+  let dbConnection;
   try {
-    await createConnection(ormConnection);
+    dbConnection = await createConnection(ormConnection);
   } catch (error) {
     console.warn("CONNECTION ERROR", error);
   }
@@ -127,7 +130,15 @@ const main = async () => {
   // trying until
   while (retries) {
     try {
+      await dbConnection?.runMigrations();
+      console.log("MIGRATIONS HAVE BEEN RUN");
+    } catch (error) {
+      console.error("ERROR RUNNING TYPEORM MIGRATIONS");
+    }
+
+    try {
       await runMigrations();
+
       // If the migrations run successfully,
       // exit the while loop.
       break;
@@ -250,7 +261,10 @@ const main = async () => {
   const app = Express.default();
 
   const allowedListOfOrigins = nodeEnvIsProd
-    ? [`${process.env.PRODUCTION_CLIENT_URI}`]
+    ? [
+        `https://sc.eddienaff.dev`,
+        // `${process.env.PRODUCTION_CLIENT_URI}`
+      ]
     : [`http://${homeIp}:4040`, `http://${homeIp}:${process.env.VIRTUAL_PORT}`];
 
   const corsOptions = {
@@ -328,9 +342,6 @@ const main = async () => {
   app.get("/", (_req, res) => res.send("hello"));
 
   app.post("/refresh_token", async (req, res) => {
-    console.log("VIEW COOKIES", req.cookies);
-    console.log("VIEW MY COOKIE", req.cookies[process.env.COOKIE_NAME!]);
-
     const token = req.cookies[process.env.COOKIE_NAME!];
     if (!token) {
       return res.send({ ok: false, accessToken: "" });
