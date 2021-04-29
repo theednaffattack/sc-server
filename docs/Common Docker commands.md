@@ -52,6 +52,8 @@ dokku tags sc-server
 dokku tags:deploy sc-server latest
 ```
 
+docker pull theednaffattack/sc-server:production && docker tag theednaffattack/sc-server:production dokku/sc-server:latest && dokku tags sc-server && dokku tags:deploy sc-server latest
+
 ```bash
 docker build -t theednaffattack/sc-db:init . && docker push theednaffattack/sc-db:init
 ```

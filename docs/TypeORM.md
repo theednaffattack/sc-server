@@ -1,3 +1,5 @@
-"export class User extends BaseEntity" gives us the ability to use extra methods on an Entity
+# TypeOrm Notes
 
-Decoratting with `@Field()` from type-graphql will expose this field to the graphql schema.
+### Generate migration
+
+`./node_modules/.bin/typeorm migration:generate -n AddTeamScopes -c production`
