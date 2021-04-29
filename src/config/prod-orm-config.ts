@@ -13,6 +13,6 @@ export const productionOrmConfig: PostgresConnectionOptions = {
   logging: false,
   synchronize: false,
   entities: ["dist/entity/*.*"],
-  migrations: ["src/migration/**/*.ts"],
+  migrations: ["dist/migration/*.js"],
   subscribers: ["src/subscriber/**/*.ts"],
 };
