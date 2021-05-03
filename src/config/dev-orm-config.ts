@@ -1,9 +1,12 @@
 import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions";
+import internalIp from "internal-ip";
+
+const homeIp = internalIp.v4.sync();
 
 export const devOrmconfig: PostgresConnectionOptions = {
   name: "default",
   type: "postgres",
-  host: "10.0.0.188",
+  host: homeIp,
   port: process.env.PG_EXTERIOR_PORT
     ? parseInt(process.env.PG_EXTERIOR_PORT)
     : 5438,
@@ -12,7 +15,7 @@ export const devOrmconfig: PostgresConnectionOptions = {
   password: process.env.POSTGRES_PASS,
   database: process.env.POSTGRES_DBNAME,
   logging: true,
-  synchronize: true,
+  synchronize: false,
   entities: ["src/entity/**/*.*"],
   migrations: ["src/migration/**/*.ts"],
   subscribers: ["src/subscriber/**/*.ts"],

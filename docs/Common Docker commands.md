@@ -65,3 +65,5 @@ docker build --build-arg POSTGRES_MAJOR_VERSION=13 --build-arg POSTGIS_MAJOR=3 -
 ```bash
 docker build --build-arg POSTGRES_MAJOR_VERSION=12  --build-arg POSTGIS_MAJOR=3 -t kartoza/postgis:POSTGRES_MAJOR_VERSION .
 ```
+
+docker-compose -f docker-compose.db-local-dev.yml up
