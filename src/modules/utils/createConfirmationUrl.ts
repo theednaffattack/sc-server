@@ -14,7 +14,7 @@ export const createConfirmationUrl = async (
     } catch (error) {
       throw Error(error);
     }
-    return `${client}/user/confirm/${userId}`;
+    return `${client}/confirmation/${userId}`;
   }
 
   if (
@@ -29,7 +29,7 @@ export const createConfirmationUrl = async (
     } catch (error) {
       throw Error(error);
     }
-    return `${client}/user/confirm/${userId}`;
+    return `${client}/confirmation/${userId}`;
   }
 
   if (process.env.PRODUCTION_CLIENT_ORIGIN && nodeEnv === "production") {
@@ -39,7 +39,7 @@ export const createConfirmationUrl = async (
     } catch (error) {
       throw Error(error);
     }
-    return `${client}/user/confirm/${userId}`;
+    return `${client}/confirmation/${userId}`;
   }
 
   throw Error("Cannot detect confirmation URL domain.");
