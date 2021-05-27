@@ -18,18 +18,18 @@ export const createConfirmationUrl = async (
   }
 
   if (
-    process.env.DEVELOPMENT_CLIENT_ORIGIN &&
+    process.env.PRODUCTION_CLIENT_ORIGIN &&
     process.env.INTERNAL_API_PORT &&
     nodeEnv === "development"
   ) {
-    const port = process.env.INTERNAL_API_PORT;
-    const client = internalIp.v4() + ":" + port;
+    const port = process.env.DEV_CLIENT_PORT;
+    const client = (await internalIp.v4()) + ":" + port;
     try {
       await redis.set(confirmUserPrefix + userId, userId, "ex", 60 * 60 * 24); // 1 day expiration
     } catch (error) {
       throw Error(error);
     }
-    return `${client}/confirmation/${userId}`;
+    return `http://${client}/confirmation/${userId}`;
   }
 
   if (process.env.PRODUCTION_CLIENT_ORIGIN && nodeEnv === "production") {
