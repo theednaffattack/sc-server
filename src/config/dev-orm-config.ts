@@ -15,7 +15,7 @@ export const devOrmconfig: PostgresConnectionOptions = {
   password: process.env.POSTGRES_PASS,
   database: process.env.POSTGRES_DBNAME,
   logging: true,
-  synchronize: false,
+  synchronize: true,
   entities: ["src/entity/**/*.*"],
   migrations: ["src/migration/**/*.ts"],
   subscribers: ["src/subscriber/**/*.ts"],
