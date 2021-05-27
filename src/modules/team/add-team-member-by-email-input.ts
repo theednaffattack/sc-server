@@ -16,3 +16,16 @@ export class AddTeamMemberByEmailInput {
   @Field(() => ID)
   teamId: string;
 }
+
+@InputType()
+export class InviteTeamMemberInput {
+  @Field(() => String)
+  @IsEmail()
+  email: string;
+
+  @Field(() => [TeamRoleEnum])
+  teamRoles?: TeamRoleEnum[];
+
+  @Field(() => ID)
+  teamId: string;
+}
