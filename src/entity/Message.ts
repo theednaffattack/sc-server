@@ -47,26 +47,40 @@ export class Message extends BaseEntity {
   // mappedMessages: [User];
 
   @Field(() => [Image], { nullable: "itemsAndList" })
-  @OneToMany(() => Image, (image) => image.message, { nullable: true })
+  @OneToMany(() => Image, (image) => image.message, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   images: Image[];
 
   @Field(() => [FileEntity], { nullable: "itemsAndList" })
-  @OneToMany(() => FileEntity, (file) => file.message, { nullable: true })
+  @OneToMany(() => FileEntity, (file) => file.message, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   files: FileEntity[];
 
   @Field(() => User)
-  @ManyToOne(() => User, (user) => user.sent_messages, { cascade: true })
+  @ManyToOne(() => User, (user) => user.sent_messages, {
+    cascade: true,
+    onDelete: "CASCADE",
+  })
   sentBy: User;
 
   @Field(() => User)
-  @ManyToOne(() => User, (user) => user.messages, { cascade: true })
+  @ManyToOne(() => User, (user) => user.messages, {
+    cascade: true,
+    onDelete: "CASCADE",
+  })
   user: User;
 
   @Field(() => Channel, { nullable: true })
-  @ManyToOne(() => Channel, (channel) => channel.messages)
+  @ManyToOne(() => Channel, (channel) => channel.messages, {
+    onDelete: "CASCADE",
+  })
   channel: Channel;
 
   @Field(() => Thread, { nullable: true })
-  @ManyToOne(() => Thread, (thread) => thread.messages)
+  @ManyToOne(() => Thread, (thread) => thread.messages, { onDelete: "CASCADE" })
   thread: Thread;
 }

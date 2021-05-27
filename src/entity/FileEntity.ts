@@ -3,14 +3,14 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne
+  ManyToOne,
 } from "typeorm";
 import {
   Field,
   ID,
   ObjectType,
   registerEnumType,
-  InputType
+  InputType,
   // InputType
 } from "type-graphql";
 
@@ -26,12 +26,12 @@ export enum FileTypeEnum {
   SVG = "SVG",
   MD = "MD",
   DOC = "DOC",
-  OTHER = "OTHER"
+  OTHER = "OTHER",
 }
 
 registerEnumType(FileTypeEnum, {
   name: "FileTypeEnum", // this one is mandatory
-  description: "css | csv | image-all | pdf | svg | docx | other" // this one is optional
+  description: "css | csv | image-all | pdf | svg | docx | other", // this one is optional
 });
 
 @ObjectType()
@@ -49,23 +49,19 @@ export class FileEntity extends BaseEntity {
   @Column({
     type: "enum",
     enum: FileTypeEnum,
-    default: FileTypeEnum.OTHER
+    default: FileTypeEnum.OTHER,
   })
   file_type: FileTypeEnum;
 
   @Field(() => Message, { nullable: true })
-  @ManyToOne(
-    () => Message,
-    message => message.files,
-    { nullable: true }
-  )
+  @ManyToOne(() => Message, (message) => message.files, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   message?: Message;
 
   @Field(() => User)
-  @ManyToOne(
-    () => User,
-    user => user.files
-  )
+  @ManyToOne(() => User, (user) => user.files, { onDelete: "CASCADE" })
   upload_user: User;
 }
 
@@ -107,7 +103,7 @@ export class FileInputHelper {
   @Column({
     type: "enum",
     enum: FileTypeEnum,
-    default: FileTypeEnum.OTHER
+    default: FileTypeEnum.OTHER,
   })
   file_type: FileTypeEnum;
 }

@@ -30,7 +30,9 @@ export class Channel extends BaseEntity {
   name: string;
 
   @Field(() => [Message], { nullable: "itemsAndList" })
-  @OneToMany(() => Message, (message) => message.channel)
+  @OneToMany(() => Message, (message) => message.channel, {
+    onDelete: "CASCADE",
+  })
   messages?: Message[];
 
   @Field(() => String, { nullable: true })
@@ -56,7 +58,7 @@ export class Channel extends BaseEntity {
   // team: Team;
 
   @Field(() => Team, { nullable: false })
-  @ManyToOne(() => Team, (team) => team.channels)
+  @ManyToOne(() => Team, (team) => team.channels, { onDelete: "CASCADE" })
   team: Channel[];
 
   @Field(() => [User], { nullable: "itemsAndList" })
@@ -64,11 +66,14 @@ export class Channel extends BaseEntity {
   invitees: User[];
 
   @Field(() => [Thread], { nullable: "itemsAndList" })
-  @OneToMany(() => Thread, (thread) => thread.channel)
+  @OneToMany(() => Thread, (thread) => thread.channel, { onDelete: "CASCADE" })
   threads: Thread[];
 
   @Field(() => User, { nullable: false })
-  @OneToMany(() => User, (user) => user.channels_created, { nullable: false })
+  @OneToMany(() => User, (user) => user.channels_created, {
+    nullable: false,
+    onDelete: "CASCADE",
+  })
   created_by: User;
 
   @Field(() => Date, { nullable: true })

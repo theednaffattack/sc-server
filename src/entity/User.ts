@@ -76,7 +76,10 @@ export class User extends BaseEntity {
   // teamRoles: Role[];
 
   @Field(() => Channel, { nullable: true })
-  @ManyToOne(() => Channel, (channel) => channel.created_by, { nullable: true })
+  @ManyToOne(() => Channel, (channel) => channel.created_by, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   channels_created?: Channel;
 
   // () => User,
@@ -85,23 +88,35 @@ export class User extends BaseEntity {
   // following: User[];
 
   @Field(() => [Image], { nullable: "itemsAndList" })
-  @OneToMany(() => Image, (image) => image.user, { nullable: true })
+  @OneToMany(() => Image, (image) => image.user, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   images: Image[];
 
   @Field(() => [FileEntity], { nullable: "itemsAndList" })
-  @OneToMany(() => FileEntity, (file) => file.upload_user, { nullable: true })
+  @OneToMany(() => FileEntity, (file) => file.upload_user, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   files: FileEntity[];
 
   @Field(() => [Message], { nullable: "itemsAndList" })
   mappedMessages: Message[];
 
   @Field(() => [User], { nullable: "itemsAndList" })
-  @ManyToMany(() => User, (user) => user.following, { nullable: true })
+  @ManyToMany(() => User, (user) => user.following, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   @JoinTable()
   followers: User[];
 
   @Field(() => [User], { nullable: "itemsAndList" })
-  @ManyToMany(() => User, (user) => user.followers, { nullable: true })
+  @ManyToMany(() => User, (user) => user.followers, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   following: User[];
 
   // easier way of doing many-to-many
@@ -110,7 +125,9 @@ export class User extends BaseEntity {
   teams: Team[];
 
   @Field(() => [Thread], { nullable: true })
-  @OneToMany(() => Thread, (thread) => thread.user)
+  @OneToMany(() => Thread, (thread) => thread.user, {
+    onDelete: "CASCADE",
+  })
   threads: Thread[];
 
   @Field(() => [Thread], { nullable: "itemsAndList" })
@@ -133,7 +150,9 @@ export class User extends BaseEntity {
   }
 
   @Field()
-  @OneToMany(() => Team, (team) => team.owner)
+  @OneToMany(() => Team, (team) => team.owner, {
+    onDelete: "CASCADE",
+  })
   team_ownership: string;
 
   @Column()
@@ -143,15 +162,21 @@ export class User extends BaseEntity {
   confirmed: boolean;
 
   @Field(() => [Message], { nullable: true })
-  @OneToMany(() => Message, (message) => message.user)
+  @OneToMany(() => Message, (message) => message.user, {
+    onDelete: "CASCADE",
+  })
   messages?: Message[];
 
   @Field(() => [Message], { nullable: true })
-  @OneToMany(() => Message, (message) => message.sentBy)
+  @OneToMany(() => Message, (message) => message.sentBy, {
+    onDelete: "CASCADE",
+  })
   sent_messages: Message[];
 
   @Field(() => [UserToTeam], { nullable: true })
-  @OneToMany(() => UserToTeam, (userToTeam) => userToTeam.team)
+  @OneToMany(() => UserToTeam, (userToTeam) => userToTeam.team, {
+    onDelete: "CASCADE",
+  })
   userToTeams: UserToTeam[];
 
   @Field(() => [String], { nullable: false })

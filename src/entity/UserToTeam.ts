@@ -4,7 +4,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   BaseEntity,
-  ObjectType as ObjectTypeTypeOrm
+  ObjectType as ObjectTypeTypeOrm,
 } from "typeorm";
 import { Field, ID, ObjectType } from "type-graphql";
 
@@ -34,24 +34,24 @@ export class UserToTeam extends BaseEntity {
       TeamRoleEnum.ADMIN,
       TeamRoleEnum.MEMBER,
       TeamRoleEnum.OWNER,
-      TeamRoleEnum.PUBLIC_GUEST
+      TeamRoleEnum.PUBLIC_GUEST,
     ],
     array: true,
-    default: [TeamRoleEnum.MEMBER]
+    default: [TeamRoleEnum.MEMBER],
   })
   teamRoleAuthorizations: TeamRoleEnum[];
 
   @Field(() => User, { nullable: false })
-  @ManyToOne(
-    (): ObjectTypeTypeOrm<User> => User,
-    user => user.userToTeams
-  )
+  @ManyToOne((): ObjectTypeTypeOrm<User> => User, (user) => user.userToTeams, {
+    onDelete: "CASCADE",
+  })
   user: User;
 
   @Field(() => Team, { nullable: false })
   @ManyToOne(
     (): ObjectTypeTypeOrm<Team> => Team,
-    ({ userToTeams }: Team): UserToTeam[] => userToTeams
+    ({ userToTeams }: Team): UserToTeam[] => userToTeams,
+    { onDelete: "CASCADE" }
   )
   team: Team;
 }
