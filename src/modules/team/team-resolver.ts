@@ -1,4 +1,6 @@
 import bcrypt from "bcryptjs";
+import { Models } from "postmark";
+import { Invitation, InvitationStatusEnum } from "../../entity/Invitation";
 import {
   Arg,
   Args,
@@ -19,13 +21,19 @@ import { TeamRoleEnum } from "../../entity/Role";
 import { Team } from "../../entity/Team";
 import { User } from "../../entity/User";
 import { UserToTeam } from "../../entity/UserToTeam";
+import { sendPostmarkInvitationEmail } from "../../lib/util.send-postmark-invitation-email";
 import { MyContext } from "../../types/MyContext";
 import { isAuth } from "../middleware/isAuth";
 import { loggerMiddleware } from "../middleware/logger";
+import { createInvitationUrl } from "../utils/create-invitation-url";
 import { exampleTeamLoader } from "../utils/data-loaders/batch-example-loader";
 import { teamMemberLoader } from "../utils/data-loaders/batch-team-members-loader";
-import { AddTeamMemberByEmailInput } from "./add-team-member-by-email-input";
+import {
+  AddTeamMemberByEmailInput,
+  InviteTeamMemberInput,
+} from "./add-team-member-by-email-input";
 import { AddTeamMemberByIdInput } from "./add-team-member-by-id-input";
+import { InviteTeamMemberResponse } from "./invite-team-member-response";
 import { TeamResponse } from "./team-response";
 
 // ADDITIONAL RESOLVERS NEEDED:
@@ -76,15 +84,254 @@ type GetUserIsEmptyType =
 
 @Resolver()
 export class UserTeamResolver {
+  // @UseMiddleware(isAuth, loggerMiddleware)
+  // @Authorized("ADMIN", "OWNER")
+  @Mutation(() => InviteTeamMemberResponse)
+  async inviteNewTeamMember(
+    @Arg("data") { teamRoles, email, teamId }: InviteTeamMemberInput
+  ): Promise<InviteTeamMemberResponse> {
+    console.log("INVITE NEW TEAM MEMBER FIRING");
+
+    const invitationErrMessages = {
+      invitation: "Error searching for invitation.",
+      team: "Error finding Team while creating invitation email.",
+      user: "Error looking up user.",
+      utt: "Error looking up User in Team merge table.",
+    };
+
+    // CONCERNS
+    // 1 - Is there an invitation already?
+    // 2 - Is the incoming email already a member of the Team?
+    // 3 - If no to both above, is the email a Slack Clone member.
+
+    let existingInvitation;
+    // Invitation.status decision
+    // --------------------------
+    // PENDING      - Return a message saying the invitation is pending
+    //                with an option to re-send or rescind and re-issue.
+    // ACCEPT_ERROR - Return a message giving a vague invitation error.
+    //                Give an option to re-issue the invitation.
+    // REISSUED     -
+    // SENT         -
+    // UNSENT       -
+
+    try {
+      existingInvitation = await Invitation.createQueryBuilder("invitation")
+        .where("invitation.email = :email", { email })
+        .andWhere("invitation.teamId = :teamId", { teamId })
+        .getOne();
+      console.log("CHECK INVITATION LOOK UP", existingInvitation);
+    } catch (error) {
+      throw Error(`${invitationErrMessages.invitation}\n${error}`);
+    }
+
+    // If THERE IS an existing Invitation
+    // 1 - Check the existing Invitation status
+    if (existingInvitation) {
+      switch (existingInvitation.status) {
+        case InvitationStatusEnum.ACCEPTED:
+          return {
+            errors: [
+              {
+                field: "special",
+                message:
+                  "Invitation has been accepted, please click login to access your account.",
+              },
+            ],
+          };
+        case InvitationStatusEnum.ACCEPT_ERROR:
+          return {
+            errors: [
+              {
+                field: "special",
+                message:
+                  "An invitation error has occurred. Please send a new invitation.",
+              },
+            ],
+          };
+        case InvitationStatusEnum.PENDING:
+          return {
+            errors: [
+              {
+                field: "special",
+                message:
+                  "An invitation error has occurred. Please send a new invitation.",
+              },
+            ],
+          };
+        case InvitationStatusEnum.REISSUED:
+          return {
+            errors: [
+              {
+                field: "special",
+                message:
+                  "This invite has been re-issued. Click here to re-send, or here to rescind the invitation and re-issue. Click here to cancel the invitation.",
+              },
+            ],
+          };
+        case InvitationStatusEnum.RESCINDED:
+          return {
+            errors: [
+              {
+                field: "special",
+                message:
+                  "This invite has been rescinded. Click here to create a new invitation.",
+              },
+            ],
+          };
+        case InvitationStatusEnum.SENT:
+          return {
+            errors: [
+              {
+                field: "special",
+                message:
+                  "This invite has been sent. Click here to re-send, or here to rescind the invitation and re-issue. Click here to cancel the invitation.",
+              },
+            ],
+          };
+        default:
+          return {
+            errors: [
+              {
+                field: "special",
+                message: "Unspecified error.",
+              },
+            ],
+          };
+          break;
+      }
+    }
+
+    // If THERE IS NOT an existing Invitation:
+    // 1 - create one
+    if (!existingInvitation) {
+      // do stuff
+    }
+
+    // 1 - check if there are existing users
+    // 2 - run various user cases
+    // CASES (2):
+    //   a - If there IS NOT a SC or Team user create invitation
+    //       and send email.
+    //   b - If there IS a user on the Team, send error.
+    //   c - If there is a SC user but not a Team user create invitation
+    //       and send email.
+
+    let getUser;
+    try {
+      // check to see if we have the user in our DB
+      getUser = await User.createQueryBuilder("user")
+        .where("user.email = :email", { email: email })
+        .getOne();
+    } catch (error) {
+      throw Error(`${invitationErrMessages.user}\n${error}`);
+    }
+
+    // let getUserToTeam;
+    // try {
+    //   getUserToTeam = await UserToTeam.createQueryBuilder("utt")
+    //     .where("utt.userId = :userId", { userId: getUser?.id })
+    //     .leftJoinAndSelect("utt.team", "team")
+    //     .getOne();
+    // } catch (error) {
+    //   throw Error(`${invitationErrMessages.utt}\n${invitationErrMessages.utt}`);
+    // }
+
+    // IF THERE ARE NOT Users found
+    // AND if the email address arg is not undefined...
+    // Create an Invitation
+    if (!getUser && email) {
+      let newInvitation;
+      let invitationResponse;
+      let team;
+
+      try {
+        team = await Team.createQueryBuilder("team")
+          .where("team.id = :id", { id: teamId })
+          .getOne();
+      } catch (error) {
+        throw Error(`${invitationErrMessages.team}\n${error}`);
+      }
+
+      try {
+        newInvitation = Invitation.create({
+          email,
+          status: InvitationStatusEnum.SENT,
+
+          teamId,
+        });
+
+        invitationResponse = await newInvitation.save();
+      } catch (error) {
+        console.error("ERROR CREATING INVITATION", error);
+      }
+
+      let confirmationLink;
+      if (invitationResponse && team) {
+        confirmationLink = createInvitationUrl(invitationResponse.id);
+        // setup email data with unicode symbols
+        const mailOptions: Models.Message = {
+          From: '"Slack Clone" <eddie@eddienaff.dev>', // sender address
+          To: email, // list of receivers
+          Subject: `Welcome to ${team.name} ✔`, // Subject line
+          TextBody: `Welcome to ${team.name}! Please copy and paste the confirmation link below into the address bar of your preferred web browser to access your account.\n
+      Confirmation link: ${confirmationLink}`, // plain text body
+          HtmlBody: `<p>Welcome to ${team.name}!
+      <p>Click the link below to access your account.</p>
+      <p>Confirmation link:</p>
+      <a href="${confirmationLink}">${confirmationLink}</a>`, // html body
+        };
+
+        let invitationEmail;
+        try {
+          invitationEmail = await sendPostmarkInvitationEmail(mailOptions);
+        } catch (error) {
+          throw Error("Error sending invitation email");
+        }
+        console.log("INVITATION EMAIL ERRORS", invitationEmail.ErrorCode);
+
+        return {
+          invitation: {
+            email: invitationResponse?.email,
+            id: invitationResponse?.id,
+            status: invitationResponse?.status,
+            teamId: team.id,
+          },
+        };
+      }
+    }
+
+    // IF THERE ARE Users found
+    // AND if the email address argument exists...
+
+    if (getUser) {
+      return {
+        invitation: { email, teamId },
+      };
+    }
+
+    // log input values
+    console.log("FORCED TO USE ENUM", {
+      teamRoles,
+      email,
+      getUser,
+      // length: getUser.length,
+      teamId,
+    });
+
+    // default return
+    // should be unreachable
+    return {
+      errors: [{ field: "email", message: "Unspecified error" }],
+    };
+  }
+
   @UseMiddleware(isAuth, loggerMiddleware)
   // @Authorized("ADMIN", "OWNER")
   @Mutation(() => UserToTeamIdReferencesOnlyClass)
   async addTeamMemberByEmail(
     @Arg("data") { teamRoles: roles, email, teamId }: AddTeamMemberByEmailInput
-  ): // @Arg("email", () => String) email: string,
-  // @Arg("teamId", () => String) teamId: string,
-  // @Arg("roles", () => [TeamRoleEnum]) roles: TeamRoleEnum[]
-  Promise<UserToTeamIdReferencesOnly> {
+  ): Promise<UserToTeamIdReferencesOnly> {
     console.log("CHECK USER FETCH 1", { email, teamId, roles });
 
     // evaluate fetch result

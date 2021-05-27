@@ -17,3 +17,6 @@ yarn-error.log
 .env.old
 .env.local
 docs/Dokku.md
+
+# Hide env vars needed for TypeOrm
+ormconfig.env

@@ -24,7 +24,9 @@ export class Thread extends BaseEntity {
   id: string;
 
   @Field(() => [Message], { nullable: "itemsAndList" })
-  @OneToMany(() => Message, (message) => message.thread)
+  @OneToMany(() => Message, (message) => message.thread, {
+    onDelete: "CASCADE",
+  })
   messages?: Message[];
 
   @Field(() => String, { nullable: true })
@@ -35,11 +37,11 @@ export class Thread extends BaseEntity {
   message_count?: number;
 
   @Field(() => User, { nullable: false })
-  @ManyToOne(() => User, (user) => user.threads)
+  @ManyToOne(() => User, (user) => user.threads, { onDelete: "CASCADE" })
   user: User;
 
   @Field(() => Team, { nullable: true })
-  @ManyToOne(() => Team, (team) => team.threads)
+  @ManyToOne(() => Team, (team) => team.threads, { onDelete: "CASCADE" })
   team: Team;
 
   @Field(() => [User], { nullable: false })
@@ -47,7 +49,9 @@ export class Thread extends BaseEntity {
   invitees: User[];
 
   @Field(() => Channel, { nullable: true })
-  @ManyToOne(() => Channel, (channel) => channel.threads)
+  @ManyToOne(() => Channel, (channel) => channel.threads, {
+    onDelete: "CASCADE",
+  })
   channel: Channel;
 
   @Field(() => Date, { nullable: true })

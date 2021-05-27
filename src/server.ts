@@ -18,7 +18,7 @@ import { createSchemaSync } from "./global-utils/createSchema";
 import { devOrmconfig } from "./config/dev-orm-config";
 import { productionOrmConfig } from "./config/prod-orm-config";
 import { MyContext } from "./types/MyContext";
-import { runMigrations } from "./lib/util.prep-dev-database";
+// import { runMigrations } from "./lib/util.prep-dev-database";
 import { verify } from "jsonwebtoken";
 import { User } from "./entity/User";
 import { sendRefreshToken } from "./lib/lib.send-refresh-token";
@@ -132,41 +132,47 @@ const main = async () => {
     try {
       await dbConnection?.runMigrations();
       console.log("MIGRATIONS HAVE BEEN RUN");
+      break;
     } catch (error) {
       console.error("ERROR RUNNING TYPEORM MIGRATIONS");
     }
 
-    try {
-      await runMigrations();
+    retries -= 1;
+    // eslint-disable-next-line no-console
+    console.log(`\n\nRETRIES LEFT: ${retries}\n\n`);
+    // wait 5 seconds
+    setTimeout(() => console.log("TIMEOUT FIRING"), 5000);
 
-      // If the migrations run successfully,
-      // exit the while loop.
-      break;
+    // try {
+    //   await runMigrations();
 
-      // if (process.env.NODE_ENV === "production") {
-      //   await runMigrations();
-      //   // If the migrations run successfully,
-      //   // exit the while loop.
-      //   break;
-      // } else {
-      //   console.log("SKIP MIGRATIONS - DEV ENV");
-      //   break;
-      // }
-    } catch (error) {
-      console.error("SOME KIND OF ERROR CONNECTING OCCURRED\n", {
-        error,
-        dirname: __dirname,
-        POSTGRES_DBNAME: process.env.POSTGRES_DBNAME,
-        POSTGRES_USER: process.env.POSTGRES_USER,
-        POSTGRES_PASS: process.env.POSTGRES_PASS,
-      });
+    //   // If the migrations run successfully,
+    //   // exit the while loop.
 
-      retries -= 1;
-      // eslint-disable-next-line no-console
-      console.log(`\n\nRETRIES LEFT: ${retries}\n\n`);
-      // wait 5 seconds
-      setTimeout(() => console.log("TIMEOUT FIRING"), 5000);
-    }
+    //   // if (process.env.NODE_ENV === "production") {
+    //   //   await runMigrations();
+    //   //   // If the migrations run successfully,
+    //   //   // exit the while loop.
+    //   //   break;
+    //   // } else {
+    //   //   console.log("SKIP MIGRATIONS - DEV ENV");
+    //   //   break;
+    //   // }
+    // } catch (error) {
+    //   console.error("SOME KIND OF ERROR CONNECTING OCCURRED\n", {
+    //     error,
+    //     dirname: __dirname,
+    //     POSTGRES_DBNAME: process.env.POSTGRES_DBNAME,
+    //     POSTGRES_USER: process.env.POSTGRES_USER,
+    //     POSTGRES_PASS: process.env.POSTGRES_PASS,
+    //   });
+
+    //   retries -= 1;
+    //   // eslint-disable-next-line no-console
+    //   console.log(`\n\nRETRIES LEFT: ${retries}\n\n`);
+    //   // wait 5 seconds
+    //   setTimeout(() => console.log("TIMEOUT FIRING"), 5000);
+    // }
   }
 
   const apolloServer = new ApolloServer({

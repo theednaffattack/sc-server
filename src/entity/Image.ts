@@ -3,7 +3,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne
+  ManyToOne,
 } from "typeorm";
 import { Field, ID, ObjectType } from "type-graphql";
 
@@ -22,17 +22,13 @@ export class Image extends BaseEntity {
   uri: string;
 
   @Field(() => Message, { nullable: true })
-  @ManyToOne(
-    () => Message,
-    message => message.images,
-    { nullable: true }
-  )
+  @ManyToOne(() => Message, (message) => message.images, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   message?: Message;
 
   @Field(() => User)
-  @ManyToOne(
-    () => User,
-    user => user.images
-  )
+  @ManyToOne(() => User, (user) => user.images, { onDelete: "CASCADE" })
   user: User;
 }

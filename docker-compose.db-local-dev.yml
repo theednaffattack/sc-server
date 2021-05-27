@@ -13,7 +13,7 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT}
       # POSTGRES_MULTIPLE_EXTENSIONS: postgis,hstore,postgis_topology,postgis_raster,pgrouting
     volumes:
-      - ./db/local-docker:/var/lib/postgresql/12/main
+      - ./db/local:/var/lib/postgresql/12/main
       # - ${POSTGRES_SSL_PATH}/cert.pem:/var/lib/postgresql/server.crt
       # - ${POSTGRES_SSL_PATH}/key.pem:/var/lib/postgresql/server.key
       # - ./db/postgres/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
