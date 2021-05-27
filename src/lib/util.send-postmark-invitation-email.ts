@@ -2,30 +2,15 @@
 import * as postmark from "postmark";
 
 // async..await is not allowed in global scope, must use a wrapper
-export async function sendPostmarkEmail(
-  emailAddress: string,
-  uri: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<postmark.Models.MessageSendingResponse | undefined> {
+export async function sendPostmarkInvitationEmail(
+  mailOptions: postmark.Models.Message
+): Promise<postmark.Models.MessageSendingResponse> {
   // Setup the Postmark client
 
   let mailSentResponse;
 
   if (process.env.POSTMARK_API_TOKEN) {
     const client = new postmark.ServerClient(process.env.POSTMARK_API_TOKEN);
-
-    // setup email data with unicode symbols
-    const mailOptions: postmark.Models.Message = {
-      From: '"Slack Clone" <eddie@eddienaff.dev>', // sender address
-      To: emailAddress, // list of receivers
-      Subject: "Welcome to Atlas Travel ✔", // Subject line
-      TextBody: `Welcome to Atlas Travel! Please copy and paste the confirmation link below into the address bar of your preferred web browser to access your account.\n
-      Confirmation link: ${uri}`, // plain text body
-      HtmlBody: `<p>Welcome to Atlas Travel!
-      <p>Click the link below to access your account.</p>
-      <p>Confirmation link:</p>
-      <a href="${uri}">${uri}</a>`, // html body
-    };
 
     // I believe we can provide a callback to client.sendEmail that uses the response
     // as well
@@ -50,11 +35,9 @@ export async function sendPostmarkEmail(
       console.log("Confirmation URI: %s", mailOptions.HtmlBody);
     }
     return mailSentResponse;
+  } else {
+    throw Error(
+      "Postmark client API token is undefined. Please add token to your environment variables."
+    );
   }
-
-  if (!process.env.POSTMARK_API_TOKEN) {
-    throw "Postmark client API token is undefined. Please add token to your environment variables.";
-  }
-
-  return undefined;
 }
