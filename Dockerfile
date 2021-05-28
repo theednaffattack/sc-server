@@ -10,7 +10,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY ./src ./src
-COPY ./db/migrations ./db/migrations
+COPY ./db/postgres/migrations ./db/postgres/migrations
 COPY ./certs ./certs
 COPY ./yarn.lock ./
 RUN yarn install --frozen-lockfile && yarn build
@@ -34,7 +34,7 @@ ENV NODE_ENV=production
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/db/migrations ./db/migrations
+COPY --from=builder /usr/src/app/db/postgres/migrations ./db/migrations
 COPY --from=builder /usr/src/app/certs ./certs
 
 
