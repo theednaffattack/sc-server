@@ -343,7 +343,6 @@ const main = async () => {
   );
 
   app.use(cookieParser());
-  // app.use(sessionMiddleware);
 
   app.get("/", (_req, res) => res.send("hello"));
 
