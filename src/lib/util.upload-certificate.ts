@@ -30,8 +30,6 @@ clientManager.importCertificate(
     PrivateKey: fs.readFileSync(
       path.resolve(__dirname, `../../secret/privkey.pem`)
     ),
-    // CertificateArn:
-    //   "arn:aws:acm:us-east-1:942394920512:certificate/29d4eafd-1014-4d2a-a506-8466588fbde4",
     CertificateChain: fs.readFileSync(
       path.resolve(__dirname, `../../secret/fullchain.pem`)
     ),
